@@ -1,55 +1,47 @@
-use nom::{
-    bytes::complete::{tag, take_until},
-    character::complete::space1,
-    combinator::{map_res, map},
-    sequence::{delimited, pair, preceded},
-    IResult, error::context,
-};
+pub(crate) mod tokens;
 
 #[derive(Debug, PartialEq)]
-struct NameValue<'a> {
-    name: &'a str,
-    value: &'a str,
+enum Token<'a> {
+    Period,
+    ForwardSlash,
+    String(&'a str),
+    LeftParenthesis,
+    RightParenthesis,
+    LeftBracket,
+    RightBracket,
+    LeftBrace,
+    RightBrace,
+    Comma,
+    Semicolon,
+    Colon,
+    Percent,
 }
 
-fn parse_name_value(input: &str) -> IResult<&str, NameValue> {
-    
-    let (input, (name, value)) = 
-    delimited(
-        tag("."), 
-        pair(
-            map(
-                take_until(" "),
-                |s| s
-            ),
-            preceded(
-                space1,
-                context(
-                    "value",
-                    map(
-                    take_until("\n"), 
-                    |s| s
-                    )
-                )
-            )
-        ),
-        tag("\n")
-    )(input)?;
+pub(crate) const _EXAMPLE_FILE: &str = 
+".version 7.5
+.target sm_30
+.address_size 64
 
-    Ok((input, NameValue { name, value }))
+.visible .entry _Z6kernelPiS_i
+{
+    .reg .f32   %f<4>;
+    .reg .s32   %r<4>;
+    .reg .pred  %p<3>;
+    .reg .b32   %r4;
+    .reg .b64   %rd<3>;
+
+    ld.param.u64    %rd1, [__cudaparm__Z6kernelPiS_i_a];
+    ld.param.u64    %rd2, [__cudaparm__Z6kernelPiS_i_b];
+    ld.param.u64    %rd3, [__cudaparm__Z6kernelPiS_i_c];
+    cvta.to.global.u64  %rd4, %rd1;
+    cvta.to.global.u64  %rd5, %rd2;
+    cvta.to.global.u64  %rd6, %rd3;
+    ld.global.f32   %f1, [%rd4];
+    ld.global.f32   %f2, [%rd5];
+    ld.global.f32   %f3, [%rd6];
+    add.f32     %f4, %f1, %f2;
+    add.f32     %f4, %f4, %f3;
+    st.global.f32   [%rd4], %f4;
+    ret;
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_name_value() {
-        let input = ".name value\n";
-        let expected_output = NameValue {
-            name: "name",
-            value: "value",
-        };
-        assert_eq!(parse_name_value(input), Ok(("", expected_output)));
-    }
-}
+";
