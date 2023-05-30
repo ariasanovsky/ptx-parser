@@ -6,15 +6,15 @@ use nom::{
     sequence::{preceded, delimited},
     character::complete::{char, space0, space1, multispace1}, combinator::opt};
 
-use super::{Version, is_special, Target, AddressSize, Preamble, LineComment};
+use super::{Version, is_special, Target, AddressSize, Preamble, Comment};
 use crate::parser::comment::parse_line_comment;
 
-fn parse_preamble(input: &str) -> IResult<&str, (Preamble, Vec<LineComment>)> {
+fn parse_preamble(input: &str) -> IResult<&str, Preamble> {
     let (input, version) = parse_version(input)?;
     let (input, target) = preceded(multispace1, parse_target)(input)?;
     let (input, address_size) = preceded(multispace1, parse_address_size)(input)?;
     //let (input, comments) = many0(parse_line_comment)(input)?;
-    Ok((input, (Preamble { version, target, address_size }, vec![])))
+    Ok((input, (Preamble { version, target, address_size })))
 }
 
 
@@ -170,7 +170,7 @@ mod test_parse_preamble {
                 version: Version { major: "1", minor: "0" },
                 target: Target { target: "sm_30" },
                 address_size: AddressSize { size: "64" }
-            }, vec![])))
+            })))
         );
     }
 }

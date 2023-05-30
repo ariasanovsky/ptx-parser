@@ -23,9 +23,11 @@ enum Token<'a> {
     Percent,
 }
 
+
 #[derive(Debug, PartialEq)]
-pub(crate) struct LineComment<'a> {
-    text: &'a str,
+pub(crate) enum Comment<'a> {
+    Line(&'a str),
+    Block(&'a str),
 }
 
 #[derive(Debug, PartialEq)]
