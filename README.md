@@ -1,18 +1,20 @@
 # ptx-parser
 
-`ptx-parser` is a Rust crate for parsing PTX files.
+`ptx-parser` is a `no_std` Rust crate for parsing PTX files.
 PTX is a low-level parallel thread execution virtual machine instruction set architecture used by NVIDIA GPUs.
 
 ## Installation
 
-Add the following to your `Cargo.toml` file:
+To install, run
 
-```toml
-[dependencies]
-ptx-parser = "0.1.0"
+```bash
+cargo add ptx-parser
 ```
 
 ## Planned usage
+
+Syntax is subject to change.
+Expect a parser function similar to what follows.
 
 ```rust
 use ptx_parser::parse_ptx;
@@ -47,7 +49,7 @@ let ptx = "
 ";
 
 let result = parse_ptx(ptx);
-println!("{:#?}", result);
+println!("{:?}", result);
 ```
 
 ## License

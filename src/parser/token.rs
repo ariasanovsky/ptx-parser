@@ -3,11 +3,14 @@ use nom::{
     branch::alt,
     bytes::complete::{tag, take_while, take_while1},
     Parser,
-    multi::{many0, many1},
     sequence::preceded,
     character::complete::{char, space0}};
 
 use super::{Token, is_special};
+
+#[cfg(feature = "std")]
+use nom::multi::{many0, many1};
+
 
 fn parse_token(input: &str) -> IResult<&str, Token> {
     preceded(space0,
@@ -28,16 +31,19 @@ fn parse_token(input: &str) -> IResult<&str, Token> {
     )))(input)
 }
 
+#[cfg(feature = "std")]
 fn parse_line(input: &str) -> IResult<&str, Vec<Token>> {
     many1(parse_token)(input.trim_start())
 }
 
+#[cfg(feature = "std")]
 fn parse_file(input: &str) -> IResult<&str, Vec<Vec<Token>>> {
     many0(parse_line)(input)
 }
 
 #[cfg(test)]
 mod token_tests {
+    #[cfg(feature = "std")]
     use crate::parser::_EXAMPLE_FILE;
 
     use super::*;
@@ -70,6 +76,7 @@ mod token_tests {
         assert!(parse_token(" ").is_err());
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn test_tokens() {
         assert_eq!(
@@ -87,6 +94,7 @@ mod token_tests {
         );
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn test_parse_line() {
         match parse_line(_EXAMPLE_FILE) {
@@ -102,6 +110,7 @@ mod token_tests {
         }   
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn test_parse_file() {
         match parse_file(_EXAMPLE_FILE) {
