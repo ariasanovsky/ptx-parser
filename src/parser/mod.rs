@@ -1,4 +1,10 @@
-pub(crate) mod tokens;
+pub(crate) mod token;
+pub(crate) mod preamble;
+pub(crate) mod comment;
+
+fn is_special(c: char) -> bool {
+    ['.', '/', '(', ')', '[', ']', '{', '}', ',', ';', ':', '%'].contains(&c)
+}
 
 #[derive(Debug, PartialEq)]
 enum Token<'a> {
@@ -17,7 +23,18 @@ enum Token<'a> {
     Percent,
 }
 
-pub(crate) const _EXAMPLE_FILE: &str = 
+#[derive(Debug, PartialEq)]
+struct LineComment<'a> {
+    text: &'a str,
+}
+
+#[derive(Debug, PartialEq)]
+struct Version<'a> {
+    major: &'a str,
+    minor: &'a str,
+}
+
+const _EXAMPLE_FILE: &str = 
 ".version 7.5
 .target sm_30
 .address_size 64

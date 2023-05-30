@@ -1,28 +1,31 @@
-use nom::{IResult, branch::alt, bytes::complete::{tag, take_while, take_while1}, Parser, multi::{many0, many1}, sequence::preceded, character::complete::space0};
+use nom::{
+    IResult,
+    branch::alt,
+    bytes::complete::{tag, take_while, take_while1},
+    Parser,
+    multi::{many0, many1},
+    sequence::preceded,
+    character::complete::{char, space0}};
 
-use super::Token;
+use super::{Token, is_special};
 
 fn parse_token(input: &str) -> IResult<&str, Token> {
     preceded(space0,
     alt((
-        tag(".").map(|_| Token::Period),
-        tag("/").map(|_| Token::ForwardSlash),
-        tag("(").map(|_| Token::LeftParenthesis),
-        tag(")").map(|_| Token::RightParenthesis),
-        tag("[").map(|_| Token::LeftBracket),
-        tag("]").map(|_| Token::RightBracket),
-        tag("{").map(|_| Token::LeftBrace),
-        tag("}").map(|_| Token::RightBrace),
-        tag(",").map(|_| Token::Comma),
-        tag(";").map(|_| Token::Semicolon),
-        tag(":").map(|_| Token::Colon),
-        tag("%").map(|_| Token::Percent),
+        char('.').map(|_| Token::Period),
+        char('/').map(|_| Token::ForwardSlash),
+        char('(').map(|_| Token::LeftParenthesis),
+        char(')').map(|_| Token::RightParenthesis),
+        char('[').map(|_| Token::LeftBracket),
+        char(']').map(|_| Token::RightBracket),
+        char('{').map(|_| Token::LeftBrace),
+        char('}').map(|_| Token::RightBrace),
+        char(',').map(|_| Token::Comma),
+        char(';').map(|_| Token::Semicolon),
+        char(':').map(|_| Token::Colon),
+        char('%').map(|_| Token::Percent),
         take_while1(|c: char| !c.is_whitespace() && !is_special(c)).map(Token::String),
     )))(input)
-}
-
-fn is_special(c: char) -> bool {
-    ['.', '/', '(', ')', '[', ']', '{', '}', ',', ';', ':', '%'].contains(&c)
 }
 
 fn parse_line(input: &str) -> IResult<&str, Vec<Token>> {
