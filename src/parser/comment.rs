@@ -9,7 +9,7 @@ use nom::{
 
 use super::LineComment;
 
-fn parse_line_comment(input: &str) -> IResult<&str, LineComment> {
+pub(crate) fn parse_line_comment(input: &str) -> IResult<&str, LineComment> {
     preceded(
         space0,
         delimited(

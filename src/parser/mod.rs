@@ -24,14 +24,31 @@ enum Token<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-struct LineComment<'a> {
+pub(crate) struct LineComment<'a> {
     text: &'a str,
+}
+
+#[derive(Debug, PartialEq)]
+struct Preamble<'a> {
+    version: Version<'a>,
+    target: Target<'a>,
+    address_size: AddressSize<'a>,
 }
 
 #[derive(Debug, PartialEq)]
 struct Version<'a> {
     major: &'a str,
     minor: &'a str,
+}
+
+#[derive(Debug, PartialEq)]
+struct Target<'a> {
+    target: &'a str,
+}
+
+#[derive(Debug, PartialEq)]
+struct AddressSize<'a> {
+    size: &'a str,
 }
 
 const _EXAMPLE_FILE: &str = 
