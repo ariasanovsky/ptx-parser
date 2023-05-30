@@ -4,9 +4,24 @@ use nom::{
     bytes::complete::{tag, take_while, take_while1, take_until},
     Parser,
     sequence::{preceded, delimited},
-    character::complete::{char, space0}, combinator::opt};
+    character::complete::{char, space0, multispace1}, combinator::{opt, map_res}, multi::many0_count};
 
 use super::Comment;
+
+pub(crate) fn empty_comments_and_whitespace(input: &str) -> IResult<&str, usize> {
+    many0_count(
+        empty_comment_or_whitespace
+    )(input)
+}
+
+pub(crate) fn empty_comment_or_whitespace(input: &str) -> IResult<&str, ()> {
+    alt((
+        multispace1
+        .map(|_| ()),
+        parse_line_comment
+        .map(|_| ()),
+    ))(input)
+}
 
 pub(crate) fn parse_line_comment(input: &str) -> IResult<&str, Comment> {
     preceded(
@@ -16,18 +31,18 @@ pub(crate) fn parse_line_comment(input: &str) -> IResult<&str, Comment> {
                 char('/'),
                 take_while(|c: char| c != '\n')
             )
-            .map(|comment| Comment::Line(comment)),
+            .map(Comment::Line),
             delimited(
                 char('*'),
                 take_until("*/"),
                 tag("*/")
             )
-            .map(|comment| Comment::Block(comment))
+            .map(Comment::Block)
     )))(input)
 }
 
 #[cfg(test)]
-mod tests {
+mod test_parse_line_comment {
     use super::*;
 
     #[test]
@@ -75,6 +90,43 @@ mod tests {
         assert_eq!(
             parse_line_comment("/* This is a block comment\n and it's on \n 3 lines */\n"),
             Ok(("\n", Comment::Block(" This is a block comment\n and it's on \n 3 lines ")))
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_empty_comments_and_whitespace {
+    use super::*;
+
+    #[test]
+    fn test_empty_string() {
+        assert_eq!(
+            empty_comments_and_whitespace(""),
+            Ok(("", 0))
+        );
+    }
+    
+    #[test]
+    fn test_new_line() {
+        assert_eq!(
+            empty_comments_and_whitespace("\n"),
+            Ok(("", 1))
+        );
+    }
+
+    #[test]
+    fn test_empty_comments_and_whitespace() {
+        assert_eq!(
+            empty_comments_and_whitespace("  // This is a comment\n  // with another line\n"),
+            Ok(("", 5))
+        );
+    }
+
+    #[test]
+    fn test_empty_comments_and_whitespace_with_leading_whitespace() {
+        assert_eq!(
+            empty_comments_and_whitespace("  // This is a comment\n  // with another line\n"),
+            Ok(("", 5))
         );
     }
 }

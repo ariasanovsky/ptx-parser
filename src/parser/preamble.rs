@@ -6,15 +6,25 @@ use nom::{
     sequence::{preceded, delimited},
     character::complete::{char, space0, space1, multispace1}, combinator::opt};
 
-use super::{Version, is_special, Target, AddressSize, Preamble, Comment};
-use crate::parser::comment::parse_line_comment;
+use super::{
+    Version, is_special, Target, AddressSize, Preamble, Comment,
+    comment::{parse_line_comment, empty_comments_and_whitespace}};
 
 fn parse_preamble(input: &str) -> IResult<&str, Preamble> {
-    let (input, version) = parse_version(input)?;
-    let (input, target) = preceded(multispace1, parse_target)(input)?;
-    let (input, address_size) = preceded(multispace1, parse_address_size)(input)?;
-    //let (input, comments) = many0(parse_line_comment)(input)?;
-    Ok((input, (Preamble { version, target, address_size })))
+    empty_comments_and_whitespace
+    .and(parse_version)
+    .map(|a| a.1)
+    .and(empty_comments_and_whitespace)
+    .map(|a| a.0)
+    .and(parse_target)
+    .and(empty_comments_and_whitespace)
+    .map(|a| a.0)
+    .and(parse_address_size)
+    .map(
+        |((version, target), address_size)|
+        Preamble { version, target, address_size }
+    )
+    .parse(input)
 }
 
 
@@ -167,6 +177,66 @@ mod test_parse_preamble {
         assert_eq!(
             parse_preamble(".version 1.0\n.target sm_30\n.address_size 64"),
             Ok(("", (Preamble {
+                version: Version { major: "1", minor: "0" },
+                target: Target { target: "sm_30" },
+                address_size: AddressSize { size: "64" }
+            })))
+        );
+    }
+
+    #[test]
+    fn leading_whitespace() {
+        assert_eq!(
+            parse_preamble("  .version 1.0\n.target sm_30\n.address_size 64"),
+            Ok(("", (Preamble {
+                version: Version { major: "1", minor: "0" },
+                target: Target { target: "sm_30" },
+                address_size: AddressSize { size: "64" }
+            })))
+        );
+    }
+    
+    #[test]
+    fn leading_newline() {
+        assert_eq!(
+            parse_preamble(" \n .version 1.0\n.target sm_30\n.address_size 64"),
+            Ok(("", (Preamble {
+                version: Version { major: "1", minor: "0" },
+                target: Target { target: "sm_30" },
+                address_size: AddressSize { size: "64" }
+            })))
+        );
+    }
+
+    #[test]
+    fn trailing_whitespace() {
+        assert_eq!(
+            parse_preamble(".version 1.0\n.target sm_30\n.address_size 64  "),
+            Ok(("  ", (Preamble {
+                version: Version { major: "1", minor: "0" },
+                target: Target { target: "sm_30" },
+                address_size: AddressSize { size: "64" }
+            })))
+        );
+    }
+
+    #[test]
+    fn immediate_comment() {
+        assert_eq!(
+            parse_preamble(".version 1.0\n.target sm_30\n.address_size 64// This is a comment"),
+            Ok(("// This is a comment", (Preamble {
+                version: Version { major: "1", minor: "0" },
+                target: Target { target: "sm_30" },
+                address_size: AddressSize { size: "64" }
+            })))
+        );
+    }
+
+    #[test]
+    fn trailing_comment() {
+        assert_eq!(
+            parse_preamble(".version 1.0\n.target sm_30\n.address_size 64\n// This is a comment"),
+            Ok(("\n// This is a comment", (Preamble {
                 version: Version { major: "1", minor: "0" },
                 target: Target { target: "sm_30" },
                 address_size: AddressSize { size: "64" }
