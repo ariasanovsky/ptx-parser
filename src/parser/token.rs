@@ -44,7 +44,7 @@ fn parse_file(input: &str) -> IResult<&str, Vec<Vec<Token>>> {
 #[cfg(test)]
 mod token_tests {
     #[cfg(feature = "std")]
-    use crate::parser::_EXAMPLE_FILE;
+    use crate::ptx_files::_EXAMPLE_FILE;
 
     use super::*;
 

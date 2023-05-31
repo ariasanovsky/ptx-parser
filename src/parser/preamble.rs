@@ -7,17 +7,33 @@ use nom::{
     character::complete::{char, space0, space1, multispace1}, combinator::opt};
 
 use super::{
-    Version, is_special, Target, AddressSize, Preamble, Comment,
-    comment::{parse_line_comment, empty_comments_and_whitespace}};
+    is_special, Preamble, Comment,
+    comment::{parse_line_comment, comments_or_whitespace}};
+
+#[derive(Debug, PartialEq)]
+pub(super) struct Version<'a> {
+    major: &'a str,
+    minor: &'a str,
+}
+
+#[derive(Debug, PartialEq)]
+pub(super) struct Target<'a> {
+    target: &'a str,
+}
+
+#[derive(Debug, PartialEq)]
+pub(super) struct AddressSize<'a> {
+    size: &'a str,
+}
 
 fn parse_preamble(input: &str) -> IResult<&str, Preamble> {
-    empty_comments_and_whitespace
+    opt(comments_or_whitespace)
     .and(parse_version)
     .map(|a| a.1)
-    .and(empty_comments_and_whitespace)
+    .and(comments_or_whitespace)
     .map(|a| a.0)
     .and(parse_target)
-    .and(empty_comments_and_whitespace)
+    .and(comments_or_whitespace)
     .map(|a| a.0)
     .and(parse_address_size)
     .map(
@@ -31,10 +47,10 @@ fn parse_preamble(input: &str) -> IResult<&str, Preamble> {
 fn parse_version(input: &str) -> IResult<&str, Version> {
     preceded(
         tag(".version").and(space1),
-        take_while1(|c: char| c.is_numeric())
+        take_while1(char::is_numeric)
         .and(preceded(
             char('.'),
-            take_while1(|c: char| c.is_numeric())
+            take_while1(char::is_numeric)
         ))
         .map(|(major, minor)| Version { major, minor })
     )(input)
@@ -58,7 +74,6 @@ fn parse_address_size(input: &str) -> IResult<&str, AddressSize> {
 
 #[cfg(test)]
 mod test_parse_version {
-    use crate::parser::Version;
     use super::*;
 
     #[test]
@@ -95,8 +110,7 @@ mod test_parse_version {
 
 #[cfg(test)]
 mod test_parse_target {
-    use super::parse_target;
-    use crate::parser::Target;
+    use super::{parse_target, Target};
     
     #[test]
     fn no_whitespace() {
@@ -132,8 +146,7 @@ mod test_parse_target {
 
 #[cfg(test)]
 mod test_parse_address_size {
-    use super::parse_address_size;
-    use crate::parser::AddressSize;
+    use super::{parse_address_size, AddressSize};
     
     #[test]
     fn no_whitespace() {
@@ -169,8 +182,7 @@ mod test_parse_address_size {
 
 #[cfg(test)]
 mod test_parse_preamble {
-    use crate::parser::{Preamble, Version, Target, AddressSize};
-    use super::parse_preamble;
+    use super::{parse_preamble, Preamble, Version, Target, AddressSize};
 
     #[test]
     fn no_whitespace() {

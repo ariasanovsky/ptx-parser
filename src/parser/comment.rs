@@ -4,12 +4,12 @@ use nom::{
     bytes::complete::{tag, take_while, take_while1, take_until},
     Parser,
     sequence::{preceded, delimited},
-    character::complete::{char, space0, multispace1}, combinator::{opt, map_res}, multi::many0_count};
+    character::complete::{char, space0, multispace1}, combinator::{opt, map_res}, multi::many1_count};
 
 use super::Comment;
 
-pub(crate) fn empty_comments_and_whitespace(input: &str) -> IResult<&str, usize> {
-    many0_count(
+pub(crate) fn comments_or_whitespace(input: &str) -> IResult<&str, usize> {
+    many1_count(
         empty_comment_or_whitespace
     )(input)
 }
@@ -100,16 +100,16 @@ mod test_empty_comments_and_whitespace {
 
     #[test]
     fn test_empty_string() {
-        assert_eq!(
-            empty_comments_and_whitespace(""),
-            Ok(("", 0))
+        assert!(
+            comments_or_whitespace("")
+            .is_err()
         );
     }
     
     #[test]
     fn test_new_line() {
         assert_eq!(
-            empty_comments_and_whitespace("\n"),
+            comments_or_whitespace("\n"),
             Ok(("", 1))
         );
     }
@@ -117,7 +117,7 @@ mod test_empty_comments_and_whitespace {
     #[test]
     fn test_empty_comments_and_whitespace() {
         assert_eq!(
-            empty_comments_and_whitespace("  // This is a comment\n  // with another line\n"),
+            comments_or_whitespace("  // This is a comment\n  // with another line\n"),
             Ok(("", 5))
         );
     }
@@ -125,7 +125,7 @@ mod test_empty_comments_and_whitespace {
     #[test]
     fn test_empty_comments_and_whitespace_with_leading_whitespace() {
         assert_eq!(
-            empty_comments_and_whitespace("  // This is a comment\n  // with another line\n"),
+            comments_or_whitespace("  // This is a comment\n  // with another line\n"),
             Ok(("", 5))
         );
     }
