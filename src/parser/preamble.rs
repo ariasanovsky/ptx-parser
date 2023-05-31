@@ -3,8 +3,8 @@ use nom::{
     bytes::complete::{tag, take_while, take_while1},
     Parser,
     //multi::{many0, many1},
-    sequence::{preceded, delimited},
-    character::complete::{char, space0, space1, multispace1}, combinator::opt};
+    sequence::{preceded, delimited, Tuple},
+    character::complete::{char, space0, space1, multispace1}, combinator::opt, InputIter};
 
 use super::{
     is_special, Preamble, Comment,
@@ -27,33 +27,44 @@ pub(super) struct AddressSize<'a> {
 }
 
 fn parse_preamble(input: &str) -> IResult<&str, Preamble> {
-    opt(comments_or_whitespace)
-    .and(parse_version)
-    .map(|a| a.1)
-    .and(comments_or_whitespace)
-    .map(|a| a.0)
-    .and(parse_target)
-    .and(comments_or_whitespace)
-    .map(|a| a.0)
-    .and(parse_address_size)
-    .map(
-        |((version, target), address_size)|
-        Preamble { version, target, address_size }
+    (
+        preceded(
+            opt(comments_or_whitespace), 
+            parse_version
+        ),
+        preceded(
+            comments_or_whitespace,
+            parse_target
+        ),
+        preceded(
+            comments_or_whitespace,
+            parse_address_size
+        )
     )
     .parse(input)
+    .map(
+        |(input, (version, target, address_size))| 
+        (input, Preamble { version, target, address_size })
+    )
 }
 
 
 fn parse_version(input: &str) -> IResult<&str, Version> {
-    preceded(
-        tag(".version").and(space1),
-        take_while1(char::is_numeric)
-        .and(preceded(
+    (
+        preceded(
+            tag(".version").and(space1),
+            take_while1(char::is_numeric)
+        ),
+        preceded(
             char('.'),
             take_while1(char::is_numeric)
-        ))
-        .map(|(major, minor)| Version { major, minor })
-    )(input)
+        )
+    )
+    .parse(input)
+    .map(
+        |(input, (major, minor))|
+        (input, Version { major, minor })
+    )
 }
 
 fn parse_target(input: &str) -> IResult<&str, Target> {
