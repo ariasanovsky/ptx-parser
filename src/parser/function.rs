@@ -4,11 +4,13 @@ use nom::{
     Parser,
     sequence::preceded,
     character::complete::{space0, space1, multispace0},
-    combinator::{opt, value},
-    branch::alt
+    combinator::{opt, value, map},
+    branch::alt,
+    character::complete::char,
+    sequence::Tuple,
 };
 
-use super::{parse_name, parse_parenthesized_naive};
+use super::{parse_name, parse_parenthesized_naive, Function, parse_braced_naive};
 
 #[derive(Debug, PartialEq)]
 pub(super) struct FunctionSignature<'a> {
@@ -31,8 +33,33 @@ pub(super) struct Parameters<'a> {
 
 #[derive(Debug, PartialEq)]
 pub(super) struct FunctionBody<'a> {
-    registers: &'a str,
-    instructions: &'a str,
+    raw_string: &'a str,
+}
+
+fn parse_function(input: &str) -> IResult<&str, Function> {
+    (
+        parse_function_signature,
+        alt((
+            map(
+                char(';'),
+                |_| None
+            ),
+            parse_function_body
+            .map(Some)
+        ))
+    )
+    .parse(input)
+    .map(
+        |(input, (signature, body))| {
+            (input, Function { signature, body })
+        }
+    )
+}
+
+fn parse_function_body(input: &str) -> IResult<&str, FunctionBody> {
+    parse_braced_naive
+        .map(|raw_string| FunctionBody { raw_string })
+    .parse(input)
 }
 
 fn parse_function_signature(input: &str) -> IResult<&str, FunctionSignature> {
@@ -196,6 +223,84 @@ mod test_parse_function_signature {
 	.param .b64 _foo_param_0,
 	.param .b64 _foo_param_1
 "})
+                }
+            ))
+        )
+    }
+}
+
+#[cfg(test)]
+mod test_parse_function_body {
+
+    use super::{parse_function_body, FunctionBody};
+
+    #[test]
+    fn empty() {
+        let input = ";";
+        let body = parse_function_body(input);
+        assert!(
+            body.is_err()
+        )
+    }
+
+    #[test]
+    fn non_empty() {
+        let input = "{.reg .b32 %r<3>}";
+        let body = parse_function_body(input);
+        assert_eq!(
+            body,
+            Ok((
+                "",
+                FunctionBody { raw_string: ".reg .b32 %r<3>" }
+            ))
+        )
+    }
+}
+
+#[cfg(test)]
+mod test_parse_function {
+
+    use super::{parse_function, Function, FunctionSignature, FunctionBody, ReturnValue, Parameters};
+
+    #[test]
+    fn no_return_no_parameters_no_body() {
+        let input = ".func _Z6kernelPiS_i;";
+        let function = parse_function(input);
+        assert_eq!(
+            function,
+            Ok((
+                "",
+                Function {
+                    signature: FunctionSignature {
+                        visible: false,
+                        entry: false,
+                        return_value: None,
+                        name: "_Z6kernelPiS_i",
+                        parameters: None,
+                    },
+                    body: None,
+                }
+            ))
+        )
+    }
+
+    #[test]
+    fn no_return_no_parameters_with_body() {
+        let input = ".func _Z6kernelPiS_i { \n foo \n bar }";
+        let function = parse_function(input);
+        assert_eq!(
+            function,
+            Ok((
+                "",
+                Function {
+                    signature: FunctionSignature {
+                        visible: false,
+                        entry: false,
+                        return_value: None,
+                        name: "_Z6kernelPiS_i",
+                        parameters: None,
+                    },
+                    body: Some(FunctionBody { raw_string: " \n foo \n bar " }),
                 }
             ))
         )

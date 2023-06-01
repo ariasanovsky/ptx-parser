@@ -48,11 +48,13 @@ struct Function<'a> {
 }
 
 fn is_special(c: char) -> bool {
-    ['.', '/', '(', ')', '[', ']', '{', '}', ',', ';', ':', '%'].contains(&c)
+    ['.', '/', '(', ')', '[', ']', '{', '}', ',', ';', ':', '%']
+    .contains(&c)
 }
 
 pub(crate) fn parse_name(input: &str) -> IResult<&str, &str> {
-    take_while1(|c: char| !c.is_whitespace() && !is_special(c))(input)
+    take_while1(|c: char| !c.is_whitespace() && !is_special(c))
+    (input)
 }
 
 pub(crate) fn parse_parenthesized_naive(input: &str) -> IResult<&str, &str> {
@@ -60,6 +62,14 @@ pub(crate) fn parse_parenthesized_naive(input: &str) -> IResult<&str, &str> {
         char('('),
         take_while1(|c: char| c != ')'),
         char(')')
+    )(input)
+}
+
+pub(crate) fn parse_braced_naive(input: &str) -> IResult<&str, &str> {
+    delimited(
+        char('{'),
+        take_while1(|c: char| c != '}'),
+        char('}')
     )(input)
 }
 
@@ -97,5 +107,49 @@ mod test_parse_parenthesized {
             parse_parenthesized_naive(input),
             Ok(("", "(hello")),
         )
+    }
+}
+
+#[cfg(test)]
+mod test_parse_braced {
+    
+    use super::parse_braced_naive;
+    
+    #[test]
+    fn no_newline() {
+        let input = "{hello}";
+        let expected = Ok(("", "hello"));
+        assert_eq!(parse_braced_naive(input), expected)
+    }
+
+    #[test]
+    fn newline() {
+        let input = "{hello\n}";
+        let expected = Ok(("", "hello\n"));
+        assert_eq!(parse_braced_naive(input), expected)
+    }
+
+    #[test]
+    fn one_left_brace() {
+        let input = "{hello";
+        assert!(
+            parse_braced_naive(input).is_err()
+        )
+    }
+
+    #[test]
+    fn two_left_one_right() {
+        let input = "{{hello}";
+        assert_eq!(
+            parse_braced_naive(input),
+            Ok(("", "{hello")),
+        )
+    }
+
+    #[test]
+    fn mock_function_body() {
+        let input = "{.reg .b32 %r<3>}";
+        let expected = Ok(("", ".reg .b32 %r<3>"));
+        assert_eq!(parse_braced_naive(input), expected)
     }
 }
