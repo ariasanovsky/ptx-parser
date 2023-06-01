@@ -1,10 +1,12 @@
 use nom::{
     IResult,
     branch::alt,
-    bytes::complete::{tag, take_while, take_while1, take_until},
+    bytes::complete::{tag, take_while, take_until},
     Parser,
     sequence::{preceded, delimited},
-    character::complete::{char, space0, multispace1}, combinator::{opt, map_res}, multi::many1_count};
+    character::complete::{char, multispace1},
+    multi::many1_count
+};
 
 use super::Comment;
 

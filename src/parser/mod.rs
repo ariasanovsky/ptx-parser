@@ -11,20 +11,20 @@ pub(crate) mod comment;
 pub(crate) mod function;
 
 #[derive(Debug, PartialEq)]
-enum Token<'a> {
-    Period,
-    ForwardSlash,
-    String(&'a str),
-    LeftParenthesis,
-    RightParenthesis,
-    LeftBracket,
-    RightBracket,
-    LeftBrace,
-    RightBrace,
-    Comma,
-    Semicolon,
-    Colon,
-    Percent,
+enum _Token<'a> {
+    _Period,
+    _ForwardSlash,
+    _String(&'a str),
+    _LeftParenthesis,
+    _RightParenthesis,
+    _LeftBracket,
+    _RightBracket,
+    _LeftBrace,
+    _RightBrace,
+    _Comma,
+    _Semicolon,
+    _Colon,
+    _Percent,
 }
 
 
@@ -42,9 +42,9 @@ struct Preamble<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-enum Function<'a> {
-    Declaration( function::FunctionSignature<'a> ),
-    Definition( function::FunctionSignature<'a>, function::FunctionBody<'a> ),
+struct Function<'a> {
+    signature: function::FunctionSignature<'a>,
+    body: Option<function::FunctionBody<'a>>,
 }
 
 fn is_special(c: char) -> bool {

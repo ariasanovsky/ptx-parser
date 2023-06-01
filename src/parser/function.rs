@@ -1,10 +1,11 @@
 use nom::{
     IResult,
-    bytes::complete::{tag, take_while1},
+    bytes::complete::tag,
     Parser,
-    sequence::{preceded, delimited},
-    character::complete::{char, space0, space1, multispace0},
-    combinator::{opt, value},branch::alt
+    sequence::preceded,
+    character::complete::{space0, space1, multispace0},
+    combinator::{opt, value},
+    branch::alt
 };
 
 use super::{parse_name, parse_parenthesized_naive};
@@ -13,9 +14,19 @@ use super::{parse_name, parse_parenthesized_naive};
 pub(super) struct FunctionSignature<'a> {
     visible: bool,
     entry: bool,
-    return_value: Option<&'a str>,
+    return_value: Option<ReturnValue<'a>>,
     name: &'a str,
-    parameters: Option<&'a str>,
+    parameters: Option<Parameters<'a>>,
+}
+
+#[derive(Debug, PartialEq)]
+pub(super) struct ReturnValue<'a> {
+    raw_string: &'a str,
+}
+
+#[derive(Debug, PartialEq)]
+pub(super) struct Parameters<'a> {
+    raw_string: &'a str,
 }
 
 #[derive(Debug, PartialEq)]
@@ -41,14 +52,23 @@ fn parse_function_signature(input: &str) -> IResult<&str, FunctionSignature> {
     
     let (input, return_value) = preceded(
         space1,
-        opt(parse_parenthesized_naive)
+        opt(
+            parse_parenthesized_naive
+            .map(|raw_string| ReturnValue { raw_string })
+        )
     )(input)?;
-    
-    let (input, name) = parse_name(input)?;
+
+    let (input, name) = preceded(
+        space0,
+        parse_name
+    )(input)?;
 
     let (input, parameters) = preceded(
         multispace0,
-        opt(parse_parenthesized_naive)
+        opt(
+            parse_parenthesized_naive
+            .map(|raw_string| Parameters { raw_string })
+        )
     )(input)?;
 
     Ok((
@@ -66,7 +86,7 @@ fn parse_function_signature(input: &str) -> IResult<&str, FunctionSignature> {
 #[cfg(test)]
 mod test_parse_function_signature {
 
-    use super::{parse_function_signature, FunctionSignature};
+    use super::{parse_function_signature, FunctionSignature, ReturnValue, Parameters};
 
     #[test]
     fn visible_entry_name() {
@@ -120,7 +140,7 @@ mod test_parse_function_signature {
                     entry: false,
                     return_value: None,
                     name: "_ZN4core9panicking",
-                    parameters: Some("hi"),
+                    parameters: Some(Parameters { raw_string: "hi" }),
                 }
             ))
         )
@@ -145,29 +165,39 @@ mod test_parse_function_signature {
                     entry: false,
                     return_value: None,
                     name: "_ZN4core9panicking",
-                    parameters: Some("
+                    parameters: Some(Parameters { raw_string: "
 	.param .b64 _ZN4core9panicking_param_0,
 	.param .b64 _ZN4core9panicking_param_1,
 	.param .b64 _ZN4core9panicking_param_2
-"
-                    ),
+"}),
                 }
             ))
         )
     }
-}
 
-fn multiline_delimited(input: &str) -> IResult<&str, &str> {
-    delimited(
-        char('('), 
-        take_while1(|c: char| c != ')'),
-        char(')')
-    )(input)
-}
-
-#[test]
-fn test_multiline_delimited() {
-    let input = "(hello\nworld!)";
-    let delimited = multiline_delimited(input);
-    assert_eq!(delimited, Ok(("", "hello\nworld!")))
+    #[test]
+    fn func_return_and_parameters() {
+        let input =
+".func  (.param .b64 func_retval0) _foo(
+	.param .b64 _foo_param_0,
+	.param .b64 _foo_param_1
+)";
+        let signature = parse_function_signature(input);
+        assert_eq!(
+            signature,
+            Ok((
+                "",
+                FunctionSignature {
+                    visible: false,
+                    entry: false,
+                    return_value: Some(ReturnValue { raw_string: ".param .b64 func_retval0" }),
+                    name: "_foo",
+                    parameters: Some(Parameters { raw_string: "
+	.param .b64 _foo_param_0,
+	.param .b64 _foo_param_1
+"})
+                }
+            ))
+        )
+    }
 }

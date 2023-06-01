@@ -1,43 +1,43 @@
 use nom::{
     IResult,
     branch::alt,
-    bytes::complete::{tag, take_while, take_while1},
+    bytes::complete::take_while1,
     Parser,
     sequence::preceded,
     character::complete::{char, space0}};
 
-use super::{Token, is_special};
+use super::{_Token, is_special};
 
 #[cfg(feature = "std")]
 use nom::multi::{many0, many1};
 
 
-fn parse_token(input: &str) -> IResult<&str, Token> {
+fn parse_token(input: &str) -> IResult<&str, _Token> {
     preceded(space0,
     alt((
-        char('.').map(|_| Token::Period),
-        char('/').map(|_| Token::ForwardSlash),
-        char('(').map(|_| Token::LeftParenthesis),
-        char(')').map(|_| Token::RightParenthesis),
-        char('[').map(|_| Token::LeftBracket),
-        char(']').map(|_| Token::RightBracket),
-        char('{').map(|_| Token::LeftBrace),
-        char('}').map(|_| Token::RightBrace),
-        char(',').map(|_| Token::Comma),
-        char(';').map(|_| Token::Semicolon),
-        char(':').map(|_| Token::Colon),
-        char('%').map(|_| Token::Percent),
-        take_while1(|c: char| !c.is_whitespace() && !is_special(c)).map(Token::String),
+        char('.').map(|_| _Token::_Period),
+        char('/').map(|_| _Token::_ForwardSlash),
+        char('(').map(|_| _Token::_LeftParenthesis),
+        char(')').map(|_| _Token::_RightParenthesis),
+        char('[').map(|_| _Token::_LeftBracket),
+        char(']').map(|_| _Token::_RightBracket),
+        char('{').map(|_| _Token::_LeftBrace),
+        char('}').map(|_| _Token::_RightBrace),
+        char(',').map(|_| _Token::_Comma),
+        char(';').map(|_| _Token::_Semicolon),
+        char(':').map(|_| _Token::_Colon),
+        char('%').map(|_| _Token::_Percent),
+        take_while1(|c: char| !c.is_whitespace() && !is_special(c)).map(_Token::_String),
     )))(input)
 }
 
 #[cfg(feature = "std")]
-fn parse_line(input: &str) -> IResult<&str, Vec<Token>> {
+fn parse_line(input: &str) -> IResult<&str, Vec<_Token>> {
     many1(parse_token)(input.trim_start())
 }
 
 #[cfg(feature = "std")]
-fn parse_file(input: &str) -> IResult<&str, Vec<Vec<Token>>> {
+fn parse_file(input: &str) -> IResult<&str, Vec<Vec<_Token>>> {
     many0(parse_line)(input)
 }
 
@@ -50,19 +50,19 @@ mod token_tests {
 
     #[test]
     fn test_parse_token_period() {
-        assert_eq!(parse_token("."), Ok(("", Token::Period)));
+        assert_eq!(parse_token("."), Ok(("", _Token::_Period)));
     }
 
     #[test]
     fn test_parse_token_backslash() {
-        assert_eq!(parse_token("/"), Ok(("", Token::ForwardSlash)));
+        assert_eq!(parse_token("/"), Ok(("", _Token::_ForwardSlash)));
     }
 
     #[test]
     fn test_parse_token_string() {
         assert_eq!(
             parse_token("Hello, world! "),
-            Ok((", world! ", Token::String("Hello")))
+            Ok((", world! ", _Token::_String("Hello")))
         );
     }
 
@@ -84,11 +84,11 @@ mod token_tests {
             Ok((
                 "",
                 vec![
-                    Token::Period,
-                    Token::String("version"),
-                    Token::String("7"),
-                    Token::Period,
-                    Token::String("5"),
+                    _Token::_Period,
+                    _Token::_String("version"),
+                    _Token::_String("7"),
+                    _Token::_Period,
+                    _Token::_String("5"),
                 ]
             ))
         );

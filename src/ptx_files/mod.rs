@@ -1,6 +1,7 @@
 pub(crate) mod a;
 pub(crate) mod b;
 pub(crate) mod c;
+pub(crate) mod d;
 pub(crate) mod kernel;
 
 pub(crate) const _EXAMPLE_FILE: &str = 
