@@ -1,12 +1,13 @@
 use nom::{
     IResult,
-    bytes::complete::{tag, take_while, take_while1},
+    bytes::complete::{tag, take_while1},
     Parser,
-    //multi::{many0, many1},
     sequence::{preceded, delimited},
-    character::complete::{char, space0, space1, multispace1}, combinator::opt, branch::alt};
+    character::complete::{char, space0, space1, multispace0},
+    combinator::{opt, value},branch::alt
+};
 
-use crate::parser::is_special;
+use super::{parse_name, parse_parenthesized_naive};
 
 #[derive(Debug, PartialEq)]
 pub(super) struct FunctionSignature<'a> {
@@ -25,35 +26,29 @@ pub(super) struct FunctionBody<'a> {
 
 fn parse_function_signature(input: &str) -> IResult<&str, FunctionSignature> {
     let (input, (visible, entry)) = alt((
-        tag(".visible")
-        .and(space1)
-        .and(tag(".entry"))
-        .map(|_| (true, true)),
-        tag(".func")
-        .map(|_| (false, false))
+        value(
+            (true, true),
+            tag(".visible")
+            .and(space1)
+            .and(tag(".entry"))
+        ),
+        value(
+            (false, false),
+            tag(".func")
+        )
     ))
     (input)?;
     
     let (input, return_value) = preceded(
         space1,
-        opt(delimited(
-            char('('),
-            take_while1(|c: char| c != ')'),
-            char(')').and(space0)
-        ))
+        opt(parse_parenthesized_naive)
     )(input)?;
     
-    let (input, name) = 
-    take_while1(|c: char| !c.is_whitespace() && !is_special(c))
-    (input)?;
+    let (input, name) = parse_name(input)?;
 
     let (input, parameters) = preceded(
-        space0,
-        opt(delimited(
-            char('('),
-            take_while1(|c: char| c != ')'),
-            char(')')
-        ))
+        multispace0,
+        opt(parse_parenthesized_naive)
     )(input)?;
 
     Ok((
@@ -112,6 +107,26 @@ mod test_parse_function_signature {
     }
 
     #[test]
+    fn func_no_return_trivial_parameters() {
+        let input =
+".func _ZN4core9panicking(hi)";
+        let signature = parse_function_signature(input);
+        assert_eq!(
+            signature,
+            Ok((
+                "",
+                FunctionSignature {
+                    visible: false,
+                    entry: false,
+                    return_value: None,
+                    name: "_ZN4core9panicking",
+                    parameters: Some("hi"),
+                }
+            ))
+        )
+    }
+
+    #[test]
     fn func_no_return_some_parameters() {
         let input =
 ".func _ZN4core9panicking
@@ -130,11 +145,29 @@ mod test_parse_function_signature {
                     entry: false,
                     return_value: None,
                     name: "_ZN4core9panicking",
-                    parameters: Some(
-                        "_ZN4core9panicking_param_0,\n\t_param .b64 _ZN4core9panicking_param_1,\n\t_param .b64 _ZN4core9panicking_param_2"
+                    parameters: Some("
+	.param .b64 _ZN4core9panicking_param_0,
+	.param .b64 _ZN4core9panicking_param_1,
+	.param .b64 _ZN4core9panicking_param_2
+"
                     ),
                 }
             ))
         )
     }
+}
+
+fn multiline_delimited(input: &str) -> IResult<&str, &str> {
+    delimited(
+        char('('), 
+        take_while1(|c: char| c != ')'),
+        char(')')
+    )(input)
+}
+
+#[test]
+fn test_multiline_delimited() {
+    let input = "(hello\nworld!)";
+    let delimited = multiline_delimited(input);
+    assert_eq!(delimited, Ok(("", "hello\nworld!")))
 }

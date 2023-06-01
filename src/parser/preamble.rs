@@ -1,14 +1,17 @@
 use nom::{
     IResult,
-    bytes::complete::{tag, take_while, take_while1},
+    bytes::complete::{tag, take_while1},
     Parser,
-    //multi::{many0, many1},
-    sequence::{preceded, delimited, Tuple},
-    character::complete::{char, space0, space1, multispace1}, combinator::opt, InputIter};
+    sequence::{preceded, Tuple},
+    character::complete::{char, space1},
+    combinator::opt
+};
 
 use super::{
-    is_special, Preamble, Comment,
-    comment::{parse_line_comment, comments_or_whitespace}};
+    Preamble,
+    comment::comments_or_whitespace,
+    parse_name
+};
 
 #[derive(Debug, PartialEq)]
 pub(super) struct Version<'a> {
@@ -70,7 +73,7 @@ fn parse_version(input: &str) -> IResult<&str, Version> {
 fn parse_target(input: &str) -> IResult<&str, Target> {
     preceded(
         tag(".target").and(space1),
-        take_while1(|c: char| !c.is_whitespace() && !is_special(c))
+        parse_name
         .map(|target| Target { target })
     )(input)
 }
@@ -78,7 +81,7 @@ fn parse_target(input: &str) -> IResult<&str, Target> {
 fn parse_address_size(input: &str) -> IResult<&str, AddressSize> {
     preceded(
         tag(".address_size").and(space1),
-        take_while1(|c: char| !c.is_whitespace() && !is_special(c))
+        parse_name
         .map(|size| AddressSize { size })
     )(input)
 }
