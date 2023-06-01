@@ -10,18 +10,20 @@ use nom::{
 
 use super::Comment;
 
-pub(crate) fn comments_or_whitespace(input: &str) -> IResult<&str, usize> {
+pub(crate) fn many1_comments_or_whitespace(input: &str) -> IResult<&str, usize> {
     many1_count(
-        empty_comment_or_whitespace
+        comment_or_whitespace
     )(input)
 }
 
-pub(crate) fn empty_comment_or_whitespace(input: &str) -> IResult<&str, ()> {
+pub(crate) fn comment_or_whitespace(input: &str) -> IResult<&str, &str> {
     alt((
-        multispace1
-        .map(|_| ()),
+        multispace1,
         parse_line_comment
-        .map(|_| ()),
+        .map(|comment| match comment {
+            Comment::Line(comment) => comment,
+            Comment::Block(comment) => comment,
+        }),
     ))(input)
 }
 
@@ -103,7 +105,7 @@ mod test_empty_comments_and_whitespace {
     #[test]
     fn test_empty_string() {
         assert!(
-            comments_or_whitespace("")
+            many1_comments_or_whitespace("")
             .is_err()
         );
     }
@@ -111,7 +113,7 @@ mod test_empty_comments_and_whitespace {
     #[test]
     fn test_new_line() {
         assert_eq!(
-            comments_or_whitespace("\n"),
+            many1_comments_or_whitespace("\n"),
             Ok(("", 1))
         );
     }
@@ -119,7 +121,7 @@ mod test_empty_comments_and_whitespace {
     #[test]
     fn test_empty_comments_and_whitespace() {
         assert_eq!(
-            comments_or_whitespace("  // This is a comment\n  // with another line\n"),
+            many1_comments_or_whitespace("  // This is a comment\n  // with another line\n"),
             Ok(("", 5))
         );
     }
@@ -127,7 +129,7 @@ mod test_empty_comments_and_whitespace {
     #[test]
     fn test_empty_comments_and_whitespace_with_leading_whitespace() {
         assert_eq!(
-            comments_or_whitespace("  // This is a comment\n  // with another line\n"),
+            many1_comments_or_whitespace("  // This is a comment\n  // with another line\n"),
             Ok(("", 5))
         );
     }

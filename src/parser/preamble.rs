@@ -9,7 +9,7 @@ use nom::{
 
 use super::{
     Preamble,
-    comment::comments_or_whitespace,
+    comment::many1_comments_or_whitespace,
     parse_name
 };
 
@@ -32,15 +32,15 @@ pub(super) struct AddressSize<'a> {
 fn parse_preamble(input: &str) -> IResult<&str, Preamble> {
     (
         preceded(
-            opt(comments_or_whitespace), 
+            opt(many1_comments_or_whitespace), 
             parse_version
         ),
         preceded(
-            comments_or_whitespace,
+            many1_comments_or_whitespace,
             parse_target
         ),
         preceded(
-            comments_or_whitespace,
+            many1_comments_or_whitespace,
             parse_address_size
         )
     )
