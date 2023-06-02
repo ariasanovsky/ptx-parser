@@ -7,7 +7,7 @@ use nom::{
 
 use super::Global;
 
-fn parse_global(input: &str) -> IResult<&str, Global> {
+pub(crate) fn parse_global(input: &str) -> IResult<&str, Global> {
     delimited(
         tag(".global").and(space1),
         take_while1(|c: char| c != ';')

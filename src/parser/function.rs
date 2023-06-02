@@ -36,7 +36,7 @@ pub(super) struct FunctionBody<'a> {
     raw_string: &'a str,
 }
 
-fn parse_function(input: &str) -> IResult<&str, Function> {
+pub(crate) fn parse_function(input: &str) -> IResult<&str, Function> {
     (
         parse_function_signature,
         alt((

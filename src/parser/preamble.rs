@@ -29,7 +29,7 @@ pub(super) struct AddressSize<'a> {
     size: &'a str,
 }
 
-fn parse_preamble(input: &str) -> IResult<&str, Preamble> {
+pub(super) fn parse_preamble(input: &str) -> IResult<&str, Preamble> {
     (
         preceded(
             opt(many1_comments_or_whitespace), 

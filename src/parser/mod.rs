@@ -10,6 +10,13 @@ pub(crate) mod preamble;
 pub(crate) mod comment;
 pub(crate) mod function;
 pub(crate) mod global;
+pub(crate) mod ptx_file;
+
+#[derive(Debug, PartialEq)]
+pub(crate) struct PtxFile<'a> {
+    preamble: Preamble<'a>,
+    body: &'a str,
+}
 
 #[derive(Debug, PartialEq)]
 pub(crate) enum Comment<'a> {
@@ -18,20 +25,20 @@ pub(crate) enum Comment<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-struct Preamble<'a> {
+pub(crate) struct Preamble<'a> {
     version: preamble::Version<'a>,
     target: preamble::Target<'a>,
     address_size: preamble::AddressSize<'a>,
 }
 
 #[derive(Debug, PartialEq)]
-struct Function<'a> {
+pub(crate) struct Function<'a> {
     signature: function::FunctionSignature<'a>,
     body: Option<function::FunctionBody<'a>>,
 }
 
 #[derive(Debug, PartialEq)]
-struct Global<'a> {
+pub(crate) struct Global<'a> {
     raw_string: &'a str,
 }
 
@@ -152,7 +159,7 @@ mod test_parse_braced {
     fn one_left_brace() {
         let input = "{hello";
         assert!(
-            parse_braced_naive(input).unwrap().0 == ""
+            parse_braced_naive(input).is_err()
         )
     }
 
