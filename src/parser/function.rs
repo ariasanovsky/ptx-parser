@@ -10,6 +10,8 @@ use nom::{
     sequence::Tuple,
 };
 
+use crate::parser::comment::many1_comments_or_whitespace;
+
 use super::{parse_name, parse_parenthesized_naive, Function, parse_braced_balanced};
 
 #[derive(Debug, PartialEq)]
@@ -37,8 +39,10 @@ pub(super) struct FunctionBody<'a> {
 }
 
 pub(crate) fn parse_function(input: &str) -> IResult<&str, Function> {
-    (
-        parse_function_signature,
+    let (input, signature) = 
+    parse_function_signature(input)?;
+    let (input, body) = preceded(
+        opt(many1_comments_or_whitespace),
         alt((
             map(
                 char(';'),
@@ -47,13 +51,14 @@ pub(crate) fn parse_function(input: &str) -> IResult<&str, Function> {
             parse_function_body
             .map(Some)
         ))
-    )
-    .parse(input)
-    .map(
-        |(input, (signature, body))| {
-            (input, Function { signature, body })
+    )(input)?;
+    Ok((
+        input,
+        Function {
+            signature,
+            body,
         }
-    )
+    ))
 }
 
 fn parse_function_body(input: &str) -> IResult<&str, FunctionBody> {
