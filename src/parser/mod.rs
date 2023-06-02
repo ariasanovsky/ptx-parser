@@ -15,7 +15,7 @@ pub(crate) mod ptx_file;
 #[derive(Debug, PartialEq)]
 pub(crate) struct PtxFile<'a> {
     preamble: Preamble<'a>,
-    body: &'a str,
+    body: Option<&'a str>,
 }
 
 #[derive(Debug, PartialEq)]

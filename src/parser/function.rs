@@ -10,7 +10,7 @@ use nom::{
     sequence::Tuple,
 };
 
-use super::{parse_name, parse_parenthesized_naive, Function, parse_braced_naive, parse_braced_balanced};
+use super::{parse_name, parse_parenthesized_naive, Function, parse_braced_balanced};
 
 #[derive(Debug, PartialEq)]
 pub(super) struct FunctionSignature<'a> {
