@@ -9,24 +9,7 @@ pub(crate) mod token;
 pub(crate) mod preamble;
 pub(crate) mod comment;
 pub(crate) mod function;
-
-#[derive(Debug, PartialEq)]
-enum _Token<'a> {
-    _Period,
-    _ForwardSlash,
-    _String(&'a str),
-    _LeftParenthesis,
-    _RightParenthesis,
-    _LeftBracket,
-    _RightBracket,
-    _LeftBrace,
-    _RightBrace,
-    _Comma,
-    _Semicolon,
-    _Colon,
-    _Percent,
-}
-
+pub(crate) mod global;
 
 #[derive(Debug, PartialEq)]
 pub(crate) enum Comment<'a> {
@@ -45,6 +28,11 @@ struct Preamble<'a> {
 struct Function<'a> {
     signature: function::FunctionSignature<'a>,
     body: Option<function::FunctionBody<'a>>,
+}
+
+#[derive(Debug, PartialEq)]
+struct Global<'a> {
+    raw_string: &'a str,
 }
 
 fn is_special(c: char) -> bool {
@@ -71,6 +59,37 @@ pub(crate) fn parse_braced_naive(input: &str) -> IResult<&str, &str> {
         take_while1(|c: char| c != '}'),
         char('}')
     )(input)
+}
+
+pub(crate) fn parse_braced_balanced(input: &str) -> IResult<&str, &str> {
+    let mut chars = input.chars().enumerate();
+    let (mut depth, mut end) = match chars.next() {
+        Some((_, '{')) => (1, None),
+        _ => return Err(nom::Err::Error(
+            nom::error::Error::new(input, nom::error::ErrorKind::Char)
+        )),
+    };
+
+    for (i, c) in chars {
+        match c {
+            '{' => depth += 1,
+            '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    end = Some(i);
+                    break;
+                }
+            },
+            _ => (),
+        }
+    }
+    if let Some(end) = end {
+        Ok((&input[end+1..], &input[1..end]))
+    } else {
+        Err(nom::Err::Error(
+            nom::error::Error::new(input, nom::error::ErrorKind::Eof)
+        ))
+    }
 }
 
 #[cfg(test)]
@@ -133,7 +152,7 @@ mod test_parse_braced {
     fn one_left_brace() {
         let input = "{hello";
         assert!(
-            parse_braced_naive(input).is_err()
+            parse_braced_naive(input).unwrap().0 == ""
         )
     }
 
@@ -151,5 +170,40 @@ mod test_parse_braced {
         let input = "{.reg .b32 %r<3>}";
         let expected = Ok(("", ".reg .b32 %r<3>"));
         assert_eq!(parse_braced_naive(input), expected)
+    }
+}
+
+#[cfg(test)]
+mod test_parse_braced_balanced {
+    
+    use super::parse_braced_balanced;
+    
+    #[test]
+    fn one_pair() {
+        let input = "{hello}";
+        let expected = Ok(("", "hello"));
+        assert_eq!(parse_braced_balanced(input), expected)
+    }
+
+    #[test]
+    fn two_pairs() {
+        let input = "{hello}{world}";
+        let expected = Ok(("{world}", "hello"));
+        assert_eq!(parse_braced_balanced(input), expected)
+    }
+
+    #[test]
+    fn nested_pair() {
+        let input = "{hello{world}}";
+        let expected = Ok(("", "hello{world}"));
+        assert_eq!(parse_braced_balanced(input), expected)
+    }
+
+    #[test]
+    fn imbalanced() {
+        let input = "{hello{world}";
+        assert!(
+            parse_braced_balanced(input).is_err()
+        )
     }
 }

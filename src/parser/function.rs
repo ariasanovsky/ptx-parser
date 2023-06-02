@@ -10,7 +10,7 @@ use nom::{
     sequence::Tuple,
 };
 
-use super::{parse_name, parse_parenthesized_naive, Function, parse_braced_naive};
+use super::{parse_name, parse_parenthesized_naive, Function, parse_braced_naive, parse_braced_balanced};
 
 #[derive(Debug, PartialEq)]
 pub(super) struct FunctionSignature<'a> {
@@ -57,7 +57,7 @@ fn parse_function(input: &str) -> IResult<&str, Function> {
 }
 
 fn parse_function_body(input: &str) -> IResult<&str, FunctionBody> {
-    parse_braced_naive
+    parse_braced_balanced
         .map(|raw_string| FunctionBody { raw_string })
     .parse(input)
 }

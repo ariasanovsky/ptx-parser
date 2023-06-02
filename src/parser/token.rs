@@ -1,3 +1,7 @@
+/*
+    todo!(deprecate this)
+ */
+
 use nom::{
     IResult,
     branch::alt,
@@ -6,11 +10,27 @@ use nom::{
     sequence::preceded,
     character::complete::{char, space0}};
 
-use super::{_Token, is_special};
+use super::is_special;
 
 #[cfg(feature = "std")]
 use nom::multi::{many0, many1};
 
+#[derive(Debug, PartialEq)]
+enum _Token<'a> {
+    _Period,
+    _ForwardSlash,
+    _String(&'a str),
+    _LeftParenthesis,
+    _RightParenthesis,
+    _LeftBracket,
+    _RightBracket,
+    _LeftBrace,
+    _RightBrace,
+    _Comma,
+    _Semicolon,
+    _Colon,
+    _Percent,
+}
 
 fn parse_token(input: &str) -> IResult<&str, _Token> {
     preceded(space0,
