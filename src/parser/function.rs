@@ -7,12 +7,11 @@ use nom::{
     combinator::{opt, value, map},
     branch::alt,
     character::complete::char,
-    sequence::Tuple,
 };
 
 use crate::parser::comment::many1_comments_or_whitespace;
 
-use super::{parse_name, parse_parenthesized_naive, Function, parse_braced_balanced};
+use super::{parse_name, parse_parenthesized_naive, Function, parse_braced_balanced, body::FunctionBody};
 
 #[derive(Debug, PartialEq)]
 pub(super) struct FunctionSignature<'a> {
@@ -30,11 +29,6 @@ pub(super) struct ReturnValue<'a> {
 
 #[derive(Debug, PartialEq)]
 pub(super) struct Parameters<'a> {
-    raw_string: &'a str,
-}
-
-#[derive(Debug, PartialEq)]
-pub(super) struct FunctionBody<'a> {
     raw_string: &'a str,
 }
 
@@ -63,7 +57,7 @@ pub(crate) fn parse_function(input: &str) -> IResult<&str, Function> {
 
 fn parse_function_body(input: &str) -> IResult<&str, FunctionBody> {
     parse_braced_balanced
-        .map(|raw_string| FunctionBody { raw_string })
+        .map(|raw_string| FunctionBody { body: Some(raw_string) })
     .parse(input)
 }
 
@@ -256,7 +250,7 @@ mod test_parse_function_body {
             body,
             Ok((
                 "",
-                FunctionBody { raw_string: ".reg .b32 %r<3>" }
+                FunctionBody { body: Some(".reg .b32 %r<3>") }
             ))
         )
     }
@@ -305,7 +299,7 @@ mod test_parse_function {
                         name: "_Z6kernelPiS_i",
                         parameters: None,
                     },
-                    body: Some(FunctionBody { raw_string: " \n foo \n bar " }),
+                    body: Some(FunctionBody { body: Some(" \n foo \n bar ") }),
                 }
             ))
         )

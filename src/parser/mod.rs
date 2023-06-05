@@ -35,7 +35,7 @@ pub(crate) struct Preamble<'a> {
 #[derive(Debug, PartialEq)]
 pub(crate) struct Function<'a> {
     signature: function::FunctionSignature<'a>,
-    body: Option<function::FunctionBody<'a>>,
+    body: Option<body::FunctionBody<'a>>,
 }
 
 #[derive(Debug, PartialEq)]
