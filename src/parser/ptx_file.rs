@@ -27,10 +27,14 @@ impl<'a> Iterator for PtxFile<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let body = self.body?;
-        Some(match alt((
-            preceded(opt(many1_comments_or_whitespace), parse_function).map(FunctionOrGlobal::Function),
-            preceded(opt(many1_comments_or_whitespace), parse_global).map(FunctionOrGlobal::Global),
-        ))(body) {
+        Some(match preceded(
+            opt(many1_comments_or_whitespace),
+            alt((
+                parse_function
+                .map(FunctionOrGlobal::Function),
+                parse_global
+                .map(FunctionOrGlobal::Global),
+        )))(body) {
             Ok((body, value)) => {
                 self.body = Some(body);
                 Ok((body, value))

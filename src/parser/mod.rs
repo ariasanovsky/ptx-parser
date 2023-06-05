@@ -11,6 +11,7 @@ pub(crate) mod comment;
 pub(crate) mod function;
 pub(crate) mod global;
 pub(crate) mod ptx_file;
+pub(crate) mod body;
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct PtxFile<'a> {

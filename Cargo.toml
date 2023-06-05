@@ -11,7 +11,7 @@ description = "parser for ptx files"
 
 [features]
 std = ["nom/std"]
-# default = ["std"]
+default = ["std"]
 
 [dependencies]
 nom = { version = "7.1.3", default-features = false }
