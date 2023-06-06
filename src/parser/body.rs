@@ -137,6 +137,26 @@ fn parse_body_line(input: &str) -> IResult<&str, BodyLine> {
             let (_, foo) = alt((
                 tag("ret")
                 .map(|_| BodyLine::Return),
+                preceded(
+                    char('{')
+                    .and(space1)
+                    .and(tag("//"))
+                    .and(space1)
+                    .and(tag("callseq"))
+                    .and(space1),
+                    take_while1(|c: char| c != '\n')
+                    .map(|raw_string| BodyLine::FunctionCallEntry(raw_string))
+                ),
+                preceded(
+                    char('}')
+                    .and(space1)
+                    .and(tag("//"))
+                    .and(space1)
+                    .and(tag("callseq"))
+                    .and(space1),
+                    take_while1(|c: char| c != '\n')
+                    .map(|raw_string| BodyLine::FunctionCallExit(raw_string))
+                ),
                 parse_goto
                 .map(BodyLine::Goto),
                 parse_register
@@ -160,7 +180,18 @@ pub(crate) enum BodyLine<'a> {
     Label(&'a str),
     Goto(Goto<'a>),
     Return,
+    FunctionCallEntry(&'a str),
+    FunctionCallExit(&'a str),
     Unknown(&'a str),
+}
+
+impl<'a> BodyLine<'a> {
+    pub(crate) fn operation(self) -> Option<Operation<'a>> {
+        match self {
+            BodyLine::Operation(operation) => Some(operation),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -176,6 +207,12 @@ pub(crate) enum OperationKind<'a> {
     LdGlobalF32,
     MulRnF32,
     StGlobalF32,
+    MoveU64,
+    CvtaGlobalU64,
+    SetpGeS32,
+    CvtS64S32,
+    AddU64,
+    MulLoS32,
     Unknown(&'a str),
 }
 
@@ -187,37 +224,108 @@ pub(crate) enum Predicate<'a> {
 
 #[cfg(test)]
 mod test_iterator {
-    use crate::{parser::{PtxFile, ptx_file::FunctionOrGlobal}, ptx_files::{_EXAMPLE_FILE, kernel}};
+    use crate::{
+        parser::{
+            PtxFile, ptx_file::FunctionOrGlobal
+        },
+        ptx_files::{_EXAMPLE_FILE, kernel, a
+        }
+    };
+
+    use super::{BodyLine, OperationKind, Operation};
+
+    fn show_body_lines(input: &str) {
+        let ptx: PtxFile = input.try_into().unwrap();
+        ptx
+        .into_iter()
+        .filter_map(|line| line.ok())
+        .filter_map(|(_, function)| {
+            function.function()
+        })
+        .for_each(|function| {
+            println!("Function: {function:?}");
+            if let Some(body) = function.body {
+                for line in body {
+                    if let Ok(line) = line {
+                        println!("Body line: {:?}", line.1);
+                    }
+                }
+            }
+        })
+        ;
+    }
+
+    fn show_unknown_body_lines(input: &str) {
+        let ptx: PtxFile = input.try_into().unwrap();
+        ptx
+        .into_iter()
+        .filter_map(|line| line.ok())
+        .filter_map(|(_, function)| {
+            function.function()
+        })
+        .for_each(|function| {
+            if let Some(body) = function.body {
+                body.filter_map(Result::ok)
+                .map(|(_, line)| line)
+                .for_each(|line| {
+                    if let BodyLine::Unknown(raw_string) = line {
+                        println!("Unknown line: {:?}", raw_string);
+                    }
+                })
+            }
+        })
+        ;
+    }
+
+    fn show_unknown_operations(input: &str) {
+        let ptx: PtxFile = input.try_into().unwrap();
+        ptx
+        .into_iter()
+        .filter_map(|line| line.ok())
+        .filter_map(|(_, function)| {
+            function.function()
+        })
+        .filter_map(|function| function.body)
+        .for_each(|body| {
+            body.filter_map(Result::ok)
+            .map(|(_, line)| line)
+            .filter_map(|line| line.operation())
+            .for_each(|operation| {
+                let Operation { operation, arguments} = operation;
+                if let OperationKind::Unknown(raw_string) = operation {
+                    println!("Unknown: {raw_string} with arguments: {arguments}");
+                }
+            })
+        })
+    }
 
     #[test]
     fn parse_body_example() {
-        let mut ptx: PtxFile = _EXAMPLE_FILE.try_into().unwrap();
-        let function = ptx.next().unwrap().unwrap().1;
-        if let FunctionOrGlobal::Function(function) = function {
-            println!("Function: {function:?}");
-            for line in function.body.unwrap() {
-                if let Ok(line) = line {
-                    println!("Body line: {:?}", line.1);
-                }
-            }
-        } else {
-            panic!("Expected function")
-        };
+        show_body_lines(_EXAMPLE_FILE)
     }
 
     #[test]
     fn parse_body_kernel() {
-        let mut ptx: PtxFile = kernel::_PTX.try_into().unwrap();
-        let function = ptx.next().unwrap().unwrap().1;
-        if let FunctionOrGlobal::Function(function) = function {
-            println!("Function: {function:?}");
-            for line in function.body.unwrap() {
-                if let Ok(line) = line {
-                    println!("Body line: {:?}", line.1);
-                }
-            }
-        } else {
-            panic!("Expected function")
-        };
+        show_body_lines(kernel::_PTX)
+    }
+
+    #[test]
+    fn parse_body_a() {
+        show_body_lines(a::_PTX)
+    }
+
+    #[test]
+    fn parse_unknowns_a() {
+        show_unknown_body_lines(a::_PTX)
+    }
+
+    #[test]
+    fn parse_unknowns_kernel() {
+        show_unknown_body_lines(kernel::_PTX)
+    }
+
+    #[test]
+    fn parse_unknown_operations_a() {
+        show_unknown_operations(a::_PTX)
     }
 }

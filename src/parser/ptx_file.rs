@@ -22,6 +22,22 @@ pub(crate) enum FunctionOrGlobal<'a> {
     Global(Global<'a>),
 }
 
+impl<'a> FunctionOrGlobal<'a> {
+    pub(crate) fn function(self) -> Option<Function<'a>> {
+        match self {
+            FunctionOrGlobal::Function(function) => Some(function),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn global(self) -> Option<Global<'a>> {
+        match self {
+            FunctionOrGlobal::Global(global) => Some(global),
+            _ => None,
+        }
+    }
+}
+
 impl<'a> Iterator for PtxFile<'a> {
     type Item = IResult<&'a str, FunctionOrGlobal<'a>>;
 
