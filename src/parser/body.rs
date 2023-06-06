@@ -88,6 +88,12 @@ fn parse_operation(input: &str) -> IResult<&str, Operation> {
         "ld.global.f32" => OperationKind::LdGlobalF32,
         "mul.rn.f32" => OperationKind::MulRnF32,
         "st.global.f32" => OperationKind::StGlobalF32,
+        "mov.u64" => OperationKind::MovU64,
+        "cvta.global.u64" => OperationKind::CvtaGlobalU64,
+        "setp.ge.s32" => OperationKind::SetpGeS32,
+        "cvt.s64.s32" => OperationKind::CvtS64S32,
+        "add.u64" => OperationKind::AddU64,
+        "mul.lo.s32" => OperationKind::MulLoS32,
         operataion => OperationKind::Unknown(operataion),
     };
     Ok((input, Operation { operation, arguments }))
@@ -207,7 +213,7 @@ pub(crate) enum OperationKind<'a> {
     LdGlobalF32,
     MulRnF32,
     StGlobalF32,
-    MoveU64,
+    MovU64,
     CvtaGlobalU64,
     SetpGeS32,
     CvtS64S32,
