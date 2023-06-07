@@ -36,7 +36,7 @@ pub(crate) fn parse_function(input: &str) -> IResult<&str, Function> {
     ))
 }
 
-pub(crate) fn parse_function_body(input: &str) -> IResult<&str, FunctionBody> {
+pub(super) fn parse_function_body(input: &str) -> IResult<&str, FunctionBody> {
     parse_braced_balanced
         .map(|raw_string| FunctionBody { body: Some(raw_string) })
     .parse(input)

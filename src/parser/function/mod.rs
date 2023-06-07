@@ -1,4 +1,4 @@
-pub(crate) mod body;
+pub(super) mod body;
 pub(crate) mod parse;
 
 #[derive(Debug, PartialEq)]

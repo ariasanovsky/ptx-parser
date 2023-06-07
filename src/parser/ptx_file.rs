@@ -48,18 +48,8 @@ impl<'a> TryFrom<&'a str> for PtxParser<'a> {
 #[cfg(feature = "std")]
 #[cfg(test)]
 mod test_iterator {
-    use super::{FunctionOrGlobal, PtxParser};
-    use crate::parser::Function;
+    use super::PtxParser;
     use crate::ptx_files::{kernel, _EXAMPLE_FILE};
-
-    impl<'a> FunctionOrGlobal<'a> {
-        pub(crate) fn function(self) -> Option<Function<'a>> {
-            match self {
-                FunctionOrGlobal::Function(function) => Some(function),
-                _ => None,
-            }
-        }
-    }
 
     #[test]
     fn parse_example() {

@@ -29,11 +29,11 @@ fn is_special(c: char) -> bool {
     .contains(&c)
 }
 
-pub(crate) fn parse_name(input: &str) -> IResult<&str, &str> {
+fn parse_name(input: &str) -> IResult<&str, &str> {
     take_while1(|c: char| !c.is_whitespace() && !is_special(c))(input)
 }
 
-pub(crate) fn parse_parenthesized_naive(input: &str) -> IResult<&str, &str> {
+fn parse_parenthesized_naive(input: &str) -> IResult<&str, &str> {
     delimited(
         char('('),
         take_while1(|c: char| c != ')'),
@@ -41,7 +41,7 @@ pub(crate) fn parse_parenthesized_naive(input: &str) -> IResult<&str, &str> {
     )(input)
 }
 
-pub(crate) fn _parse_braced_naive(input: &str) -> IResult<&str, &str> {
+fn _parse_braced_naive(input: &str) -> IResult<&str, &str> {
     delimited(
         char('{'),
         take_while1(|c: char| c != '}'),
@@ -49,7 +49,7 @@ pub(crate) fn _parse_braced_naive(input: &str) -> IResult<&str, &str> {
     )(input)
 }
 
-pub(crate) fn parse_braced_balanced(input: &str) -> IResult<&str, &str> {
+fn parse_braced_balanced(input: &str) -> IResult<&str, &str> {
     let mut chars = input.chars().enumerate();
     let (mut depth, mut end) = match chars.next() {
         Some((_, '{')) => (1, None),

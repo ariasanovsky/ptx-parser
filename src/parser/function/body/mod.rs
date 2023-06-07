@@ -13,8 +13,8 @@ use crate::parser::{
 };
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct FunctionBody<'a> {
-    pub(crate) body: Option<&'a str>,
+pub(super) struct FunctionBody<'a> {
+    pub(super) body: Option<&'a str>,
 }
 
 impl<'a> Iterator for FunctionBody<'a> {
@@ -201,7 +201,7 @@ pub(crate) enum Predicate<'a> {
 #[cfg(test)]
 mod test_iterator {
     use crate::{
-        parser::PtxParser,
+        parser::{PtxParser, ptx_file::FunctionOrGlobal},
         ptx_files::{a, kernel, _EXAMPLE_FILE},
     };
 
@@ -213,7 +213,11 @@ mod test_iterator {
         .into_iter()
             .filter_map(|line| line.ok())
         .filter_map(|(_, function)| {
-            function.function()
+            if let FunctionOrGlobal::Function(function) = function {
+                Some(function)
+            } else {
+                None
+            }
         })
         .for_each(|function| {
             dbg!("Function: {function:?}");
@@ -233,7 +237,11 @@ mod test_iterator {
         .into_iter()
             .filter_map(|line| line.ok())
         .filter_map(|(_, function)| {
-            function.function()
+            if let FunctionOrGlobal::Function(function) = function {
+                Some(function)
+            } else {
+                None
+            }
         })
         .for_each(|function| {
             if let Some(body) = function.body {
@@ -263,7 +271,11 @@ mod test_iterator {
         .into_iter()
         .filter_map(|line| line.ok())
         .filter_map(|(_, function)| {
-            function.function()
+            if let FunctionOrGlobal::Function(function) = function {
+                Some(function)
+            } else {
+                None
+            }
         })
         .filter_map(|function| function.body)
         .for_each(|body| {
