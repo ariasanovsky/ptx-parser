@@ -1,13 +1,17 @@
 use nom::{
     IResult,
     branch::alt,
-    bytes::complete::{take_while1, tag},
-    character::complete::{char, space1}, sequence::{delimited, terminated, preceded, Tuple}, Parser, combinator::{opt, value},
+    bytes::complete::{take_while1, tag, take_until1},
+    character::complete::{
+        char, space1, space0, multispace1},
+    sequence::{delimited, terminated, preceded, Tuple},
+    Parser,
+    combinator::opt,
 };
 
 use crate::parser::comment::many1_comments_or_whitespace;
 
-use super::is_special;
+use super::{is_special, parse_braced_balanced, comment::parse_line_comment, Comment};
 
 #[derive(Debug, PartialEq)]
 pub(super) struct FunctionBody<'a> {
@@ -50,7 +54,7 @@ fn parse_register(input: &str) -> IResult<&str, Register> {
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct Operation<'a> {
-    operation: OperationKind<'a>,
+    operation: &'a str,
     arguments: &'a str,
 }
 
@@ -76,26 +80,6 @@ fn parse_operation(input: &str) -> IResult<&str, Operation> {
         )
     )
     .parse(input)?;
-    let operation = match operation {
-        "ld.param.u32" => OperationKind::LdParamU32,
-        "mov.u32" => OperationKind::MovU32,
-        "mad.lo.s32" => OperationKind::MadLoS32,
-        "setp.lt.s32" => OperationKind::SetpLtS32,
-        "ld.param.u64" => OperationKind::LdParamU64,
-        "cvta.to.global.u64" => OperationKind::CvtaToGlobalU64,
-        "mul.wide.s32" => OperationKind::MulWideS32,
-        "add.s64" => OperationKind::AddS64,
-        "ld.global.f32" => OperationKind::LdGlobalF32,
-        "mul.rn.f32" => OperationKind::MulRnF32,
-        "st.global.f32" => OperationKind::StGlobalF32,
-        "mov.u64" => OperationKind::MovU64,
-        "cvta.global.u64" => OperationKind::CvtaGlobalU64,
-        "setp.ge.s32" => OperationKind::SetpGeS32,
-        "cvt.s64.s32" => OperationKind::CvtS64S32,
-        "add.u64" => OperationKind::AddU64,
-        "mul.lo.s32" => OperationKind::MulLoS32,
-        operataion => OperationKind::Unknown(operataion),
-    };
     Ok((input, Operation { operation, arguments }))
 }
 
@@ -121,14 +105,46 @@ fn parse_goto(input: &str) -> IResult<&str, Goto> {
     Ok((input, Goto { predicate, label }))
 }
 
+#[derive(Debug, PartialEq)]
+pub(crate) struct FunctionCall<'a> {
+    setup: &'a str,
+    function: &'a str,
+    arguments: &'a str,
+    comment: Comment<'a>,
+}
+
+fn parse_function_call(input: &str) -> IResult<&str, FunctionCall> {
+    let (input, (body, comment)) = (
+        parse_braced_balanced,
+        preceded(space0, parse_line_comment)
+    )
+    .parse(input)?;
+    
+    (
+        take_until1("call.uni"),
+        delimited(
+            tag("call.uni").and(multispace1),
+            take_while1(|c: char| c != ','),
+            char(',')
+        ),
+    )
+    .parse(body)
+    .map(
+        |(arguments, (setup, function))|
+        (input, FunctionCall { setup, function, arguments, comment })
+    )
+}
+
 fn parse_body_line(input: &str) -> IResult<&str, BodyLine> {
-    let foo = alt((
+    let body_line = alt((
         delimited(
             char('$'),
             take_while1(|c: char| !c.is_whitespace() && c != ':'),
             char(':')
         )
         .map(BodyLine::Label),
+        parse_function_call
+        .map(BodyLine::FunctionCall),
         terminated(
             alt((
                 take_while1(|c: char| c != ';'),
@@ -138,31 +154,11 @@ fn parse_body_line(input: &str) -> IResult<&str, BodyLine> {
         .map(BodyLine::Unknown)
     ))
     (input)?;
-    Ok(match foo {
+    Ok(match body_line {
         (input, BodyLine::Unknown(raw_string)) => {
-            let (_, foo) = alt((
+            let (_, body_line) = alt((
                 tag("ret")
                 .map(|_| BodyLine::Return),
-                preceded(
-                    char('{')
-                    .and(space1)
-                    .and(tag("//"))
-                    .and(space1)
-                    .and(tag("callseq"))
-                    .and(space1),
-                    take_while1(|c: char| c != '\n')
-                    .map(|raw_string| BodyLine::FunctionCallEntry(raw_string))
-                ),
-                preceded(
-                    char('}')
-                    .and(space1)
-                    .and(tag("//"))
-                    .and(space1)
-                    .and(tag("callseq"))
-                    .and(space1),
-                    take_while1(|c: char| c != '\n')
-                    .map(|raw_string| BodyLine::FunctionCallExit(raw_string))
-                ),
                 parse_goto
                 .map(BodyLine::Goto),
                 parse_register
@@ -173,9 +169,9 @@ fn parse_body_line(input: &str) -> IResult<&str, BodyLine> {
                 .map(BodyLine::Unknown),
             ))
             .parse(raw_string)?;
-            (input, foo)
+            (input, body_line)
         },
-        label => label
+        label_or_braced => label_or_braced
     })
 }
 
@@ -186,8 +182,7 @@ pub(crate) enum BodyLine<'a> {
     Label(&'a str),
     Goto(Goto<'a>),
     Return,
-    FunctionCallEntry(&'a str),
-    FunctionCallExit(&'a str),
+    FunctionCall(FunctionCall<'a>),
     Unknown(&'a str),
 }
 
@@ -201,28 +196,6 @@ impl<'a> BodyLine<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-pub(crate) enum OperationKind<'a> {
-    LdParamU32,
-    MovU32,
-    MadLoS32,
-    SetpLtS32,
-    LdParamU64,
-    CvtaToGlobalU64,
-    MulWideS32,
-    AddS64,
-    LdGlobalF32,
-    MulRnF32,
-    StGlobalF32,
-    MovU64,
-    CvtaGlobalU64,
-    SetpGeS32,
-    CvtS64S32,
-    AddU64,
-    MulLoS32,
-    Unknown(&'a str),
-}
-
-#[derive(Debug, PartialEq)]
 pub(crate) enum Predicate<'a> {
     True(&'a str),
     False(&'a str),
@@ -231,14 +204,12 @@ pub(crate) enum Predicate<'a> {
 #[cfg(test)]
 mod test_iterator {
     use crate::{
-        parser::{
-            PtxFile, ptx_file::FunctionOrGlobal
-        },
+        parser::PtxFile,
         ptx_files::{_EXAMPLE_FILE, kernel, a
         }
     };
 
-    use super::{BodyLine, OperationKind, Operation};
+    use super::{BodyLine, Operation};
 
     fn show_body_lines(input: &str) {
         let ptx: PtxFile = input.try_into().unwrap();
@@ -283,7 +254,7 @@ mod test_iterator {
         ;
     }
 
-    fn show_unknown_operations(input: &str) {
+    fn show_operations(input: &str) {
         let ptx: PtxFile = input.try_into().unwrap();
         ptx
         .into_iter()
@@ -298,9 +269,7 @@ mod test_iterator {
             .filter_map(|line| line.operation())
             .for_each(|operation| {
                 let Operation { operation, arguments} = operation;
-                if let OperationKind::Unknown(raw_string) = operation {
-                    println!("Unknown: {raw_string} with arguments: {arguments}");
-                }
+                println!("Operation: {operation} with arguments: {arguments}");
             })
         })
     }
@@ -332,6 +301,6 @@ mod test_iterator {
 
     #[test]
     fn parse_unknown_operations_a() {
-        show_unknown_operations(a::_PTX)
+        show_operations(a::_PTX)
     }
 }
