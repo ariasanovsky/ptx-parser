@@ -1,19 +1,8 @@
-use nom::{
-    branch::alt,
-    Parser,
-    sequence::preceded,
-    IResult,
-    combinator::opt
-};
+use nom::{branch::alt, combinator::opt, sequence::preceded, IResult, Parser};
 
 use super::{
-    PtxFile,
-    Function,
-    Global,
-    function::parse_function,
-    global::parse_global,
-    preamble::parse_preamble,
-    comment::many1_comments_or_whitespace
+    comment::many1_comments_or_whitespace, function::parse_function, global::parse_global,
+    preamble::parse_preamble, Function, Global, PtxFile,
 };
 
 #[derive(Debug)]
@@ -28,8 +17,8 @@ impl<'a> Iterator for PtxFile<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         let body = self.body?;
         Some(match preceded(
-            opt(many1_comments_or_whitespace),
-            alt((
+                opt(many1_comments_or_whitespace),
+                alt((
                 parse_function
                 .map(FunctionOrGlobal::Function),
                 parse_global
@@ -38,11 +27,11 @@ impl<'a> Iterator for PtxFile<'a> {
             Ok((body, value)) => {
                 self.body = Some(body);
                 Ok((body, value))
-            },
+            }
             err => {
                 self.body = None;
                 err
-            },
+            }
         })
     }
 }
@@ -73,8 +62,8 @@ mod test_iterator {
                 _ => None,
             }
         }
-    }    
-    
+    }
+
     #[test]
     fn parse_example() {
         let ptx: PtxFile = _EXAMPLE_FILE.try_into().unwrap();
