@@ -1,16 +1,11 @@
-use nom::{
-    bytes::complete::take_while1,
-    IResult,
-    sequence::delimited,
-    character::complete::char,
-};
+use nom::{bytes::complete::take_while1, character::complete::char, sequence::delimited, IResult};
 
-pub(crate) mod preamble;
+pub(crate) mod body;
 pub(crate) mod comment;
 pub(crate) mod function;
 pub(crate) mod global;
+pub(crate) mod preamble;
 pub(crate) mod ptx_file;
-pub(crate) mod body;
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct PtxFile<'a> {
@@ -48,8 +43,7 @@ fn is_special(c: char) -> bool {
 }
 
 pub(crate) fn parse_name(input: &str) -> IResult<&str, &str> {
-    take_while1(|c: char| !c.is_whitespace() && !is_special(c))
-    (input)
+    take_while1(|c: char| !c.is_whitespace() && !is_special(c))(input)
 }
 
 pub(crate) fn parse_parenthesized_naive(input: &str) -> IResult<&str, &str> {
@@ -74,7 +68,7 @@ pub(crate) fn parse_braced_balanced(input: &str) -> IResult<&str, &str> {
         Some((_, '{')) => (1, None),
         _ => return Err(nom::Err::Error(
             nom::error::Error::new(input, nom::error::ErrorKind::Char)
-        )),
+        ))
     };
 
     for (i, c) in chars {
@@ -86,24 +80,25 @@ pub(crate) fn parse_braced_balanced(input: &str) -> IResult<&str, &str> {
                     end = Some(i);
                     break;
                 }
-            },
+            }
             _ => (),
         }
     }
     if let Some(end) = end {
-        Ok((&input[end+1..], &input[1..end]))
+        Ok((&input[end + 1..], &input[1..end]))
     } else {
-        Err(nom::Err::Error(
-            nom::error::Error::new(input, nom::error::ErrorKind::Eof)
-        ))
+        Err(nom::Err::Error(nom::error::Error::new(
+            input,
+            nom::error::ErrorKind::Eof,
+        )))
     }
 }
 
 #[cfg(test)]
 mod test_parse_parenthesized {
-    
+
     use super::parse_parenthesized_naive;
-    
+
     #[test]
     fn no_newline() {
         let input = "(hello)";
@@ -121,9 +116,7 @@ mod test_parse_parenthesized {
     #[test]
     fn one_left_parenthesis() {
         let input = "(hello";
-        assert!(
-            parse_parenthesized_naive(input).is_err()
-        )
+        assert!(parse_parenthesized_naive(input).is_err())
     }
 
     #[test]
@@ -138,9 +131,9 @@ mod test_parse_parenthesized {
 
 #[cfg(test)]
 mod test_parse_braced {
-    
+
     use super::_parse_braced_naive;
-    
+
     #[test]
     fn no_newline() {
         let input = "{hello}";
@@ -158,9 +151,7 @@ mod test_parse_braced {
     #[test]
     fn one_left_brace() {
         let input = "{hello";
-        assert!(
-            _parse_braced_naive(input).is_err()
-        )
+        assert!(_parse_braced_naive(input).is_err())
     }
 
     #[test]
@@ -182,9 +173,9 @@ mod test_parse_braced {
 
 #[cfg(test)]
 mod test_parse_braced_balanced {
-    
+
     use super::parse_braced_balanced;
-    
+
     #[test]
     fn one_pair() {
         let input = "{hello}";
@@ -209,8 +200,6 @@ mod test_parse_braced_balanced {
     #[test]
     fn imbalanced() {
         let input = "{hello{world}";
-        assert!(
-            parse_braced_balanced(input).is_err()
-        )
+        assert!(parse_braced_balanced(input).is_err())
     }
 }
