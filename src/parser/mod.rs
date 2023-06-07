@@ -5,7 +5,6 @@ use nom::{
     character::complete::char,
 };
 
-pub(crate) mod token;
 pub(crate) mod preamble;
 pub(crate) mod comment;
 pub(crate) mod function;
