@@ -1,17 +1,12 @@
 use nom::{
-    IResult,
     bytes::complete::{tag, take_while1},
-    Parser,
-    sequence::{preceded, Tuple},
     character::complete::{char, space1},
-    combinator::opt
+    combinator::opt,
+    sequence::{preceded, Tuple},
+    IResult, Parser,
 };
 
-use super::{
-    Preamble,
-    comment::many1_comments_or_whitespace,
-    parse_name
-};
+use super::{comment::many1_comments_or_whitespace, parse_name, Preamble};
 
 #[derive(Debug, PartialEq)]
 pub(super) struct Version<'a> {
@@ -45,44 +40,38 @@ pub(super) fn parse_preamble(input: &str) -> IResult<&str, Preamble> {
         )
     )
     .parse(input)
-    .map(
-        |(input, (version, target, address_size))| 
-        (input, Preamble { version, target, address_size })
-    )
+    .map(|(input, (version, target, address_size))| {
+        (
+            input,
+            Preamble {
+                version,
+                target,
+                address_size,
+            },
+        )
+    })
 }
-
 
 fn parse_version(input: &str) -> IResult<&str, Version> {
     (
-        preceded(
-            tag(".version").and(space1),
-            take_while1(char::is_numeric)
-        ),
-        preceded(
-            char('.'),
-            take_while1(char::is_numeric)
-        )
+        preceded(tag(".version").and(space1), take_while1(char::is_numeric)),
+        preceded(char('.'), take_while1(char::is_numeric)),
     )
     .parse(input)
-    .map(
-        |(input, (major, minor))|
-        (input, Version { major, minor })
-    )
+    .map(|(input, (major, minor))| (input, Version { major, minor }))
 }
 
 fn parse_target(input: &str) -> IResult<&str, Target> {
     preceded(
         tag(".target").and(space1),
-        parse_name
-        .map(|target| Target { target })
+        parse_name.map(|target| Target { target }),
     )(input)
 }
 
 fn parse_address_size(input: &str) -> IResult<&str, AddressSize> {
     preceded(
         tag(".address_size").and(space1),
-        parse_name
-        .map(|size| AddressSize { size })
+        parse_name.map(|size| AddressSize { size }),
     )(input)
 }
 
@@ -94,22 +83,32 @@ mod test_parse_version {
     fn no_whitespace() {
         assert_eq!(
             parse_version(".version 1.0"),
-            Ok(("", Version { major: "1", minor: "0" }))
+            Ok((
+                "",
+                Version {
+                    major: "1",
+                    minor: "0"
+                }
+            ))
         );
     }
 
     #[test]
     fn leading_whitespace() {
-        assert!(
-            parse_version("  .version 1.0").is_err()
-        );
+        assert!(parse_version("  .version 1.0").is_err());
     }
 
     #[test]
     fn trailing_whitespace() {
         assert_eq!(
             parse_version(".version 1.0  "),
-            Ok(("  ", Version { major: "1", minor: "0" }))
+            Ok((
+                "  ",
+                Version {
+                    major: "1",
+                    minor: "0"
+                }
+            ))
         );
     }
 
@@ -117,7 +116,13 @@ mod test_parse_version {
     fn immediate_comment() {
         assert_eq!(
             parse_version(".version 1.0// This is a comment"),
-            Ok(("// This is a comment", Version { major: "1", minor: "0" }))
+            Ok((
+                "// This is a comment",
+                Version {
+                    major: "1",
+                    minor: "0"
+                }
+            ))
         );
     }
 }
@@ -125,7 +130,7 @@ mod test_parse_version {
 #[cfg(test)]
 mod test_parse_target {
     use super::{parse_target, Target};
-    
+
     #[test]
     fn no_whitespace() {
         assert_eq!(
@@ -136,9 +141,7 @@ mod test_parse_target {
 
     #[test]
     fn leading_whitespace() {
-        assert!(
-            parse_target("  .target sm_30").is_err()
-        );
+        assert!(parse_target("  .target sm_30").is_err());
     }
 
     #[test]
@@ -161,7 +164,7 @@ mod test_parse_target {
 #[cfg(test)]
 mod test_parse_address_size {
     use super::{parse_address_size, AddressSize};
-    
+
     #[test]
     fn no_whitespace() {
         assert_eq!(
@@ -172,9 +175,7 @@ mod test_parse_address_size {
 
     #[test]
     fn leading_whitespace() {
-        assert!(
-            parse_address_size("  .address_size 64").is_err()
-        );
+        assert!(parse_address_size("  .address_size 64").is_err());
     }
 
     #[test]
@@ -196,17 +197,23 @@ mod test_parse_address_size {
 
 #[cfg(test)]
 mod test_parse_preamble {
-    use super::{parse_preamble, Preamble, Version, Target, AddressSize};
+    use super::{parse_preamble, AddressSize, Preamble, Target, Version};
 
     #[test]
     fn no_whitespace() {
         assert_eq!(
             parse_preamble(".version 1.0\n.target sm_30\n.address_size 64"),
-            Ok(("", (Preamble {
-                version: Version { major: "1", minor: "0" },
-                target: Target { target: "sm_30" },
-                address_size: AddressSize { size: "64" }
-            })))
+            Ok((
+                "",
+                (Preamble {
+                    version: Version {
+                        major: "1",
+                        minor: "0"
+                    },
+                    target: Target { target: "sm_30" },
+                    address_size: AddressSize { size: "64" }
+                })
+            ))
         );
     }
 
@@ -214,23 +221,35 @@ mod test_parse_preamble {
     fn leading_whitespace() {
         assert_eq!(
             parse_preamble("  .version 1.0\n.target sm_30\n.address_size 64"),
-            Ok(("", (Preamble {
-                version: Version { major: "1", minor: "0" },
-                target: Target { target: "sm_30" },
-                address_size: AddressSize { size: "64" }
-            })))
+            Ok((
+                "",
+                (Preamble {
+                    version: Version {
+                        major: "1",
+                        minor: "0"
+                    },
+                    target: Target { target: "sm_30" },
+                    address_size: AddressSize { size: "64" }
+                })
+            ))
         );
     }
-    
+
     #[test]
     fn leading_newline() {
         assert_eq!(
             parse_preamble(" \n .version 1.0\n.target sm_30\n.address_size 64"),
-            Ok(("", (Preamble {
-                version: Version { major: "1", minor: "0" },
-                target: Target { target: "sm_30" },
-                address_size: AddressSize { size: "64" }
-            })))
+            Ok((
+                "",
+                (Preamble {
+                    version: Version {
+                        major: "1",
+                        minor: "0"
+                    },
+                    target: Target { target: "sm_30" },
+                    address_size: AddressSize { size: "64" }
+                })
+            ))
         );
     }
 
@@ -238,11 +257,17 @@ mod test_parse_preamble {
     fn trailing_whitespace() {
         assert_eq!(
             parse_preamble(".version 1.0\n.target sm_30\n.address_size 64  "),
-            Ok(("  ", (Preamble {
-                version: Version { major: "1", minor: "0" },
-                target: Target { target: "sm_30" },
-                address_size: AddressSize { size: "64" }
-            })))
+            Ok((
+                "  ",
+                (Preamble {
+                    version: Version {
+                        major: "1",
+                        minor: "0"
+                    },
+                    target: Target { target: "sm_30" },
+                    address_size: AddressSize { size: "64" }
+                })
+            ))
         );
     }
 
@@ -250,11 +275,17 @@ mod test_parse_preamble {
     fn immediate_comment() {
         assert_eq!(
             parse_preamble(".version 1.0\n.target sm_30\n.address_size 64// This is a comment"),
-            Ok(("// This is a comment", (Preamble {
-                version: Version { major: "1", minor: "0" },
-                target: Target { target: "sm_30" },
-                address_size: AddressSize { size: "64" }
-            })))
+            Ok((
+                "// This is a comment",
+                (Preamble {
+                    version: Version {
+                        major: "1",
+                        minor: "0"
+                    },
+                    target: Target { target: "sm_30" },
+                    address_size: AddressSize { size: "64" }
+                })
+            ))
         );
     }
 
@@ -262,11 +293,17 @@ mod test_parse_preamble {
     fn trailing_comment() {
         assert_eq!(
             parse_preamble(".version 1.0\n.target sm_30\n.address_size 64\n// This is a comment"),
-            Ok(("\n// This is a comment", (Preamble {
-                version: Version { major: "1", minor: "0" },
-                target: Target { target: "sm_30" },
-                address_size: AddressSize { size: "64" }
-            })))
+            Ok((
+                "\n// This is a comment",
+                (Preamble {
+                    version: Version {
+                        major: "1",
+                        minor: "0"
+                    },
+                    target: Target { target: "sm_30" },
+                    address_size: AddressSize { size: "64" }
+                })
+            ))
         );
     }
 }
