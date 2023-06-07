@@ -60,7 +60,7 @@ pub(crate) fn parse_parenthesized_naive(input: &str) -> IResult<&str, &str> {
     )(input)
 }
 
-pub(crate) fn parse_braced_naive(input: &str) -> IResult<&str, &str> {
+pub(crate) fn _parse_braced_naive(input: &str) -> IResult<&str, &str> {
     delimited(
         char('{'),
         take_while1(|c: char| c != '}'),
@@ -139,27 +139,27 @@ mod test_parse_parenthesized {
 #[cfg(test)]
 mod test_parse_braced {
     
-    use super::parse_braced_naive;
+    use super::_parse_braced_naive;
     
     #[test]
     fn no_newline() {
         let input = "{hello}";
         let expected = Ok(("", "hello"));
-        assert_eq!(parse_braced_naive(input), expected)
+        assert_eq!(_parse_braced_naive(input), expected)
     }
 
     #[test]
     fn newline() {
         let input = "{hello\n}";
         let expected = Ok(("", "hello\n"));
-        assert_eq!(parse_braced_naive(input), expected)
+        assert_eq!(_parse_braced_naive(input), expected)
     }
 
     #[test]
     fn one_left_brace() {
         let input = "{hello";
         assert!(
-            parse_braced_naive(input).is_err()
+            _parse_braced_naive(input).is_err()
         )
     }
 
@@ -167,7 +167,7 @@ mod test_parse_braced {
     fn two_left_one_right() {
         let input = "{{hello}";
         assert_eq!(
-            parse_braced_naive(input),
+            _parse_braced_naive(input),
             Ok(("", "{hello")),
         )
     }
@@ -176,7 +176,7 @@ mod test_parse_braced {
     fn mock_function_body() {
         let input = "{.reg .b32 %r<3>}";
         let expected = Ok(("", ".reg .b32 %r<3>"));
-        assert_eq!(parse_braced_naive(input), expected)
+        assert_eq!(_parse_braced_naive(input), expected)
     }
 }
 

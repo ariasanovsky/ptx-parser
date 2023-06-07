@@ -186,15 +186,6 @@ pub(crate) enum BodyLine<'a> {
     Unknown(&'a str),
 }
 
-impl<'a> BodyLine<'a> {
-    pub(crate) fn operation(self) -> Option<Operation<'a>> {
-        match self {
-            BodyLine::Operation(operation) => Some(operation),
-            _ => None,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub(crate) enum Predicate<'a> {
     True(&'a str),
@@ -253,6 +244,15 @@ mod test_iterator {
         })
         ;
     }
+
+    impl<'a> BodyLine<'a> {
+        pub(crate) fn operation(self) -> Option<Operation<'a>> {
+            match self {
+                BodyLine::Operation(operation) => Some(operation),
+                _ => None,
+            }
+        }
+    }    
 
     fn show_operations(input: &str) {
         let ptx: PtxFile = input.try_into().unwrap();
