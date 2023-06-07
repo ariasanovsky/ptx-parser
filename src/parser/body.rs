@@ -268,8 +268,8 @@ mod test_iterator {
             .map(|(_, line)| line)
             .filter_map(|line| line.operation())
             .for_each(|operation| {
-                let Operation { operation, arguments} = operation;
-                dbg!("Operation: {operation} with arguments: {arguments}");
+                let Operation { operation: _operation, arguments: _arguments} = operation;
+                dbg!("Operation: {_operation} with arguments: {_arguments}");
             })
         })
     }

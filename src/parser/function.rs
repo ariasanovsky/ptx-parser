@@ -259,7 +259,7 @@ mod test_parse_function_body {
 #[cfg(test)]
 mod test_parse_function {
 
-    use super::{parse_function, Function, FunctionSignature, FunctionBody, ReturnValue, Parameters};
+    use super::{parse_function, Function, FunctionSignature, FunctionBody};
 
     #[test]
     fn no_return_no_parameters_no_body() {

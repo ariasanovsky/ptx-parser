@@ -63,20 +63,13 @@ impl<'a> TryFrom<&'a str> for PtxFile<'a> {
 #[cfg(test)]
 mod test_iterator {
     use super::{PtxFile, FunctionOrGlobal};
-    use crate::parser::{Function, Global};
-    use crate::ptx_files::{_EXAMPLE_FILE, kernel, a, b, c, d};
+    use crate::parser::Function;
+    use crate::ptx_files::{_EXAMPLE_FILE, kernel};
 
     impl<'a> FunctionOrGlobal<'a> {
         pub(crate) fn function(self) -> Option<Function<'a>> {
             match self {
                 FunctionOrGlobal::Function(function) => Some(function),
-                _ => None,
-            }
-        }
-    
-        pub(crate) fn global(self) -> Option<Global<'a>> {
-            match self {
-                FunctionOrGlobal::Global(global) => Some(global),
                 _ => None,
             }
         }
@@ -86,8 +79,8 @@ mod test_iterator {
     fn parse_example() {
         let ptx: PtxFile = _EXAMPLE_FILE.try_into().unwrap();
         dbg!("Preamble: {:?}", &ptx.preamble);
-        for foo in ptx {
-            dbg!("{foo:?}\n");
+        for _function_or_global in ptx {
+            dbg!("{_function_or_global:?}\n");
         }
     }
 
@@ -95,8 +88,8 @@ mod test_iterator {
     fn parse_kernel() {
         let ptx: PtxFile = kernel::_PTX.try_into().unwrap();
         dbg!("Preamble: {:?}", &ptx.preamble);
-        for foo in ptx {
-            dbg!("{foo:?}\n");
+        for _function_or_global in ptx {
+            dbg!("{_function_or_global:?}\n");
         }
     }
 }
