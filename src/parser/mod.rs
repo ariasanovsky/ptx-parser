@@ -6,6 +6,10 @@ pub(crate) mod global;
 pub(crate) mod preamble;
 pub(crate) mod ptx_file;
 
+use preamble::Preamble;
+use function::Function;
+use global::Global;
+
 #[derive(Debug)]
 pub struct PtxParser<'a> {
     preamble: Preamble<'a>,
@@ -18,24 +22,6 @@ pub struct PtxFile<'a> {
     preamble: Preamble<'a>,
     functions: Vec<Function<'a>>,
     globals: Vec<Global<'a>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Preamble<'a> {
-    version: preamble::Version<'a>,
-    target: preamble::Target<'a>,
-    address_size: preamble::AddressSize<'a>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Function<'a> {
-    signature: function::FunctionSignature<'a>,
-    body: Option<function::body::FunctionBody<'a>>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Global<'a> {
-    raw_string: &'a str,
 }
 
 fn is_special(c: char) -> bool {

@@ -1,26 +1,13 @@
-use nom::{
-    bytes::complete::{tag, take_while1},
-    character::complete::{char, space1},
-    sequence::delimited,
-    IResult, Parser,
-};
-
-use super::Global;
-
-pub(crate) fn parse_global(input: &str) -> IResult<&str, Global> {
-    delimited(
-        tag(".global").and(space1),
-        take_while1(|c: char| c != ';')
-        .map(|raw_string| Global { raw_string }),
-        char(';'),
-    )(input)
+#[derive(Debug, PartialEq)]
+pub struct Global<'a> {
+    raw_string: &'a str,
 }
+
+pub(crate) mod parse;
 
 #[cfg(test)]
 mod test_parse_global {
-    use crate::parser::Global;
-
-    use super::parse_global;
+    use crate::parser::global::{Global, parse::parse_global};
 
     #[test]
     fn trivial_exaample() {

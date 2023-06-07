@@ -1,9 +1,6 @@
 use nom::{branch::alt, combinator::opt, sequence::preceded, IResult, Parser};
 
-use super::{
-    function::parse_function, global::parse_global,
-    preamble::parse_preamble, Function, Global, PtxParser, comment::parse::many1_comments_or_whitespace,
-};
+use super::{function::{Function, parse::parse_function}, global::{Global, parse::parse_global}, PtxParser, comment::parse::many1_comments_or_whitespace, preamble::parse::parse_preamble};
 
 #[derive(Debug)]
 pub enum FunctionOrGlobal<'a> {

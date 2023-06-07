@@ -1,19 +1,11 @@
-use nom::{
-    IResult,
-    bytes::complete::tag,
-    Parser,
-    sequence::preceded,
-    character::complete::{space0, space1, multispace0},
-    combinator::{opt, value, map},
-    branch::alt,
-    character::complete::char,
-};
-
-use super::{parse_name, parse_parenthesized_naive, Function, parse_braced_balanced, comment::parse::many1_comments_or_whitespace};
-
 pub(crate) mod body;
+pub(crate) mod parse;
 
-use body::FunctionBody;
+#[derive(Debug, PartialEq)]
+pub struct Function<'a> {
+    signature: FunctionSignature<'a>,
+    body: Option<body::FunctionBody<'a>>,
+}
 
 #[derive(Debug, PartialEq)]
 pub(super) struct FunctionSignature<'a> {
@@ -34,87 +26,12 @@ pub(super) struct Parameters<'a> {
     raw_string: &'a str,
 }
 
-pub(crate) fn parse_function(input: &str) -> IResult<&str, Function> {
-    let (input, signature) = 
-    parse_function_signature(input)?;
-    let (input, body) = preceded(
-        opt(many1_comments_or_whitespace),
-        alt((
-            map(
-                char(';'),
-                |_| None
-            ),
-            parse_function_body
-            .map(Some)
-        ))
-    )(input)?;
-    Ok((
-        input,
-        Function {
-            signature,
-            body,
-        }
-    ))
-}
-
-fn parse_function_body(input: &str) -> IResult<&str, FunctionBody> {
-    parse_braced_balanced
-        .map(|raw_string| FunctionBody { body: Some(raw_string) })
-    .parse(input)
-}
-
-fn parse_function_signature(input: &str) -> IResult<&str, FunctionSignature> {
-    let (input, (visible, entry)) = alt((
-        value(
-            (true, true),
-            tag(".visible")
-            .and(space1)
-            .and(tag(".entry"))
-        ),
-        value(
-            (false, false),
-            tag(".func")
-        )
-    ))
-    (input)?;
-    
-    let (input, return_value) = preceded(
-        space1,
-        opt(
-            parse_parenthesized_naive
-            .map(|raw_string| ReturnValue { raw_string })
-        )
-    )(input)?;
-
-    let (input, name) = preceded(
-        space0,
-        parse_name
-    )(input)?;
-
-    let (input, parameters) = preceded(
-        multispace0,
-        opt(
-            parse_parenthesized_naive
-            .map(|raw_string| Parameters { raw_string })
-        )
-    )(input)?;
-
-    Ok((
-        input,
-        FunctionSignature {
-            visible,
-            entry,
-            return_value,
-            name,
-            parameters,
-        }
-    ))
-}
-
 #[cfg(test)]
 mod test_parse_function_signature {
 
-    use super::{parse_function_signature, FunctionSignature, ReturnValue, Parameters};
+    use crate::parser::function::parse::parse_function_signature;
+
+    use super::{FunctionSignature, ReturnValue, Parameters};
 
     #[test]
     fn visible_entry_name() {
@@ -233,7 +150,9 @@ mod test_parse_function_signature {
 #[cfg(test)]
 mod test_parse_function_body {
 
-    use super::{parse_function_body, FunctionBody};
+    use crate::parser::function::{
+        parse::parse_function_body, body::FunctionBody,
+    };
 
     #[test]
     fn empty() {
@@ -260,8 +179,8 @@ mod test_parse_function_body {
 
 #[cfg(test)]
 mod test_parse_function {
+    use crate::parser::function::{parse::parse_function, Function, FunctionSignature, body::FunctionBody};
 
-    use super::{parse_function, Function, FunctionSignature, FunctionBody};
 
     #[test]
     fn no_return_no_parameters_no_body() {
