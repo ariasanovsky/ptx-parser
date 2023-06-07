@@ -211,11 +211,11 @@ mod test_iterator {
             function.function()
         })
         .for_each(|function| {
-            println!("Function: {function:?}");
+            dbg!("Function: {function:?}");
             if let Some(body) = function.body {
                 for line in body {
                     if let Ok(line) = line {
-                        println!("Body line: {:?}", line.1);
+                        dbg!("Body line: {:?}", line.1);
                     }
                 }
             }
@@ -237,7 +237,7 @@ mod test_iterator {
                 .map(|(_, line)| line)
                 .for_each(|line| {
                     if let BodyLine::Unknown(raw_string) = line {
-                        println!("Unknown line: {:?}", raw_string);
+                        dbg!("Unknown line: {:?}", raw_string);
                     }
                 })
             }
@@ -269,7 +269,7 @@ mod test_iterator {
             .filter_map(|line| line.operation())
             .for_each(|operation| {
                 let Operation { operation, arguments} = operation;
-                println!("Operation: {operation} with arguments: {arguments}");
+                dbg!("Operation: {operation} with arguments: {arguments}");
             })
         })
     }

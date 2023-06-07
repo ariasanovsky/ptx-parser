@@ -85,18 +85,18 @@ mod test_iterator {
     #[test]
     fn parse_example() {
         let ptx: PtxFile = _EXAMPLE_FILE.try_into().unwrap();
-        println!("Preamble: {preamble:?}", preamble = ptx.preamble);
+        dbg!("Preamble: {:?}", &ptx.preamble);
         for foo in ptx {
-            println!("{foo:?}\n")
+            dbg!("{foo:?}\n");
         }
     }
 
     #[test]
     fn parse_kernel() {
         let ptx: PtxFile = kernel::_PTX.try_into().unwrap();
-        println!("Preamble: {preamble:?}", preamble = ptx.preamble);
+        dbg!("Preamble: {:?}", &ptx.preamble);
         for foo in ptx {
-            println!("{foo:?}\n")
+            dbg!("{foo:?}\n");
         }
     }
 }
