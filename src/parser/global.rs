@@ -1,8 +1,8 @@
 use nom::{
-    IResult,
-    sequence::delimited,
     bytes::complete::{tag, take_while1},
-    character::complete::{char, space1}, Parser,
+    character::complete::{char, space1},
+    sequence::delimited,
+    IResult, Parser,
 };
 
 use super::Global;
@@ -12,7 +12,7 @@ pub(crate) fn parse_global(input: &str) -> IResult<&str, Global> {
         tag(".global").and(space1),
         take_while1(|c: char| c != ';')
         .map(|raw_string| Global { raw_string }),
-        char(';'), 
+        char(';'),
     )(input)
 }
 
