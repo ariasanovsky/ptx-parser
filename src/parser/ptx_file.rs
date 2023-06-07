@@ -62,9 +62,9 @@ impl<'a> TryFrom<&'a str> for PtxFile<'a> {
 #[cfg(feature = "std")]
 #[cfg(test)]
 mod test_iterator {
-    use super::{PtxFile, FunctionOrGlobal};
+    use super::{FunctionOrGlobal, PtxFile};
     use crate::parser::Function;
-    use crate::ptx_files::{_EXAMPLE_FILE, kernel};
+    use crate::ptx_files::{kernel, _EXAMPLE_FILE};
 
     impl<'a> FunctionOrGlobal<'a> {
         pub(crate) fn function(self) -> Option<Function<'a>> {

@@ -4,8 +4,7 @@ pub(crate) mod c;
 pub(crate) mod d;
 pub(crate) mod kernel;
 
-pub(crate) const _EXAMPLE_FILE: &str = 
-".version 7.5
+pub(crate) const _EXAMPLE_FILE: &str = ".version 7.5
 .target sm_30
 .address_size 64
 
