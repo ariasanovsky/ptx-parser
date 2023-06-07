@@ -9,9 +9,7 @@ use nom::{
     character::complete::char,
 };
 
-use crate::parser::comment::many1_comments_or_whitespace;
-
-use super::{parse_name, parse_parenthesized_naive, Function, parse_braced_balanced};
+use super::{parse_name, parse_parenthesized_naive, Function, parse_braced_balanced, comment::parse::many1_comments_or_whitespace};
 
 pub(crate) mod body;
 

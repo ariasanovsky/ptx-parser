@@ -8,10 +8,8 @@ use nom::{
 };
 
 use crate::parser::{
-    comment::{many1_comments_or_whitespace, parse_line_comment},
     is_special,
-    Comment,
-    parse_braced_balanced
+    parse_braced_balanced, comment::{parse::{many1_comments_or_whitespace, parse_line_comment}, Comment}
 };
 
 #[derive(Debug, PartialEq)]

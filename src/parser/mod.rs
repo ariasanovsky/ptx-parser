@@ -21,12 +21,6 @@ pub struct PtxFile<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-pub(crate) enum Comment<'a> {
-    Line(&'a str),
-    Block(&'a str),
-}
-
-#[derive(Debug, PartialEq)]
 pub struct Preamble<'a> {
     version: preamble::Version<'a>,
     target: preamble::Target<'a>,

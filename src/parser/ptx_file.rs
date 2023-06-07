@@ -1,8 +1,8 @@
 use nom::{branch::alt, combinator::opt, sequence::preceded, IResult, Parser};
 
 use super::{
-    comment::many1_comments_or_whitespace, function::parse_function, global::parse_global,
-    preamble::parse_preamble, Function, Global, PtxParser,
+    function::parse_function, global::parse_global,
+    preamble::parse_preamble, Function, Global, PtxParser, comment::parse::many1_comments_or_whitespace,
 };
 
 #[derive(Debug)]

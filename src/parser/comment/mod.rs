@@ -1,51 +1,16 @@
-use nom::{
-    branch::alt,
-    bytes::complete::{tag, take_until, take_while},
-    character::complete::{char, multispace1},
-    multi::many1_count,
-    sequence::{delimited, preceded},
-    IResult, Parser,
-};
+pub(crate) mod parse;
 
-use super::Comment;
-
-pub(crate) fn many1_comments_or_whitespace(input: &str) -> IResult<&str, usize> {
-    many1_count(comment_or_whitespace)(input)
-}
-
-pub(crate) fn comment_or_whitespace(input: &str) -> IResult<&str, &str> {
-    alt((
-        multispace1,
-        parse_line_comment
-        .map(|comment| match comment {
-            Comment::Line(comment) => comment,
-            Comment::Block(comment) => comment,
-        }),
-    ))(input)
-}
-
-pub(crate) fn parse_line_comment(input: &str) -> IResult<&str, Comment> {
-    preceded(
-        char('/'),
-        alt((
-            preceded(
-                char('/'),
-                take_while(|c: char| c != '\n')
-            )
-            .map(Comment::Line),
-            delimited(
-                char('*'),
-                take_until("*/"),
-                tag("*/")
-            )
-            .map(Comment::Block)
-    )))(input)
+#[derive(Debug, PartialEq)]
+pub(crate) enum Comment<'a> {
+    Line(&'a str),
+    Block(&'a str),
 }
 
 #[cfg(test)]
 mod test_parse_line_comment {
-    use super::*;
+    use crate::parser::comment::{Comment, parse::parse_line_comment};
 
+    
     #[test]
     fn test_parse_line_comment_single_line() {
         assert_eq!(
@@ -106,8 +71,9 @@ mod test_parse_line_comment {
 
 #[cfg(test)]
 mod test_empty_comments_and_whitespace {
-    use super::*;
+    use crate::parser::comment::parse::many1_comments_or_whitespace;
 
+    
     #[test]
     fn test_empty_string() {
         assert!(

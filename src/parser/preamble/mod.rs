@@ -6,7 +6,7 @@ use nom::{
     IResult, Parser,
 };
 
-use super::{comment::many1_comments_or_whitespace, parse_name, Preamble};
+use super::{parse_name, Preamble, comment::parse::many1_comments_or_whitespace};
 
 #[derive(Debug, PartialEq)]
 pub(super) struct Version<'a> {
