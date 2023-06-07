@@ -1,17 +1,15 @@
 use nom::{
-    IResult,
     branch::alt,
-    bytes::complete::{take_while1, tag, take_until1},
-    character::complete::{
-        char, space1, space0, multispace1},
-    sequence::{delimited, terminated, preceded, Tuple},
-    Parser,
+    bytes::complete::{tag, take_until1, take_while1},
+    character::complete::{char, multispace1, space0, space1},
     combinator::opt,
+    sequence::{delimited, preceded, terminated, Tuple},
+    IResult, Parser,
 };
 
 use crate::parser::comment::many1_comments_or_whitespace;
 
-use super::{is_special, parse_braced_balanced, comment::parse_line_comment, Comment};
+use super::{comment::parse_line_comment, is_special, parse_braced_balanced, Comment};
 
 #[derive(Debug, PartialEq)]
 pub(super) struct FunctionBody<'a> {
@@ -27,13 +25,13 @@ impl<'a> Iterator for FunctionBody<'a> {
             opt(many1_comments_or_whitespace),
             parse_body_line,
         )(body) {
-            Ok((body, value)) => {
-                self.body = Some(body);
-                Ok((body, value))
+                Ok((body, value)) => {
+                    self.body = Some(body);
+                    Ok((body, value))
             },
-            err => {
-                self.body = None;
-                err
+                err => {
+                    self.body = None;
+                    err
             },
         })
     }
@@ -65,8 +63,7 @@ pub(crate) struct Goto<'a> {
 }
 
 fn parse_unknown_line(input: &str) -> IResult<&str, &str> {
-    take_while1(|_| true)
-    (input)
+    take_while1(|_| true)(input)
 }
 
 fn parse_operation(input: &str) -> IResult<&str, Operation> {
@@ -77,10 +74,16 @@ fn parse_operation(input: &str) -> IResult<&str, Operation> {
         preceded(
             space1,
             take_while1(|_| true)
-        )
+        ),
     )
     .parse(input)?;
-    Ok((input, Operation { operation, arguments }))
+    Ok((
+        input,
+        Operation {
+            operation,
+            arguments,
+        },
+    ))
 }
 
 fn parse_goto(input: &str) -> IResult<&str, Goto> {
@@ -88,15 +91,15 @@ fn parse_goto(input: &str) -> IResult<&str, Goto> {
         delimited(
             char('@'),
             opt(char('!'))
-            .and(take_while1(|c: char| !c.is_whitespace()))
-            .map(|(negation, raw_string)| {
-                Some(if negation.is_none() {
-                    Predicate::True(raw_string)
-                } else {
-                    Predicate::False(raw_string)
-                })
-            }),
-            space1.and(tag("bra")).and(space1).and(char('$'))
+                .and(take_while1(|c: char| !c.is_whitespace()))
+                .map(|(negation, raw_string)| {
+                    Some(if negation.is_none() {
+                        Predicate::True(raw_string)
+                    } else {
+                        Predicate::False(raw_string)
+                    })
+                }),
+            space1.and(tag("bra")).and(space1).and(char('$')),
         ),
         tag("bra.uni").and(space1).and(char('$'))
         .map(|_| None),
@@ -119,20 +122,27 @@ fn parse_function_call(input: &str) -> IResult<&str, FunctionCall> {
         preceded(space0, parse_line_comment)
     )
     .parse(input)?;
-    
+
     (
         take_until1("call.uni"),
         delimited(
             tag("call.uni").and(multispace1),
             take_while1(|c: char| c != ','),
-            char(',')
+            char(','),
         ),
     )
-    .parse(body)
-    .map(
-        |(arguments, (setup, function))|
-        (input, FunctionCall { setup, function, arguments, comment })
-    )
+        .parse(body)
+        .map(|(arguments, (setup, function))| {
+            (
+                input,
+                FunctionCall {
+                    setup,
+                    function,
+                    arguments,
+                    comment,
+                },
+            )
+        })
 }
 
 fn parse_body_line(input: &str) -> IResult<&str, BodyLine> {
@@ -140,7 +150,7 @@ fn parse_body_line(input: &str) -> IResult<&str, BodyLine> {
         delimited(
             char('$'),
             take_while1(|c: char| !c.is_whitespace() && c != ':'),
-            char(':')
+            char(':'),
         )
         .map(BodyLine::Label),
         parse_function_call
@@ -157,21 +167,16 @@ fn parse_body_line(input: &str) -> IResult<&str, BodyLine> {
     Ok(match body_line {
         (input, BodyLine::Unknown(raw_string)) => {
             let (_, body_line) = alt((
-                tag("ret")
-                .map(|_| BodyLine::Return),
-                parse_goto
-                .map(BodyLine::Goto),
-                parse_register
-                .map(BodyLine::Register),
-                parse_operation
-                .map(BodyLine::Operation),
-                parse_unknown_line
-                .map(BodyLine::Unknown),
+                tag("ret").map(|_| BodyLine::Return),
+                parse_goto.map(BodyLine::Goto),
+                parse_register.map(BodyLine::Register),
+                parse_operation.map(BodyLine::Operation),
+                parse_unknown_line.map(BodyLine::Unknown),
             ))
             .parse(raw_string)?;
             (input, body_line)
-        },
-        label_or_braced => label_or_braced
+        }
+        label_or_braced => label_or_braced,
     })
 }
 
@@ -196,8 +201,7 @@ pub(crate) enum Predicate<'a> {
 mod test_iterator {
     use crate::{
         parser::PtxFile,
-        ptx_files::{_EXAMPLE_FILE, kernel, a
-        }
+        ptx_files::{a, kernel, _EXAMPLE_FILE},
     };
 
     use super::{BodyLine, Operation};
@@ -206,7 +210,7 @@ mod test_iterator {
         let ptx: PtxFile = input.try_into().unwrap();
         ptx
         .into_iter()
-        .filter_map(|line| line.ok())
+            .filter_map(|line| line.ok())
         .filter_map(|(_, function)| {
             function.function()
         })
@@ -219,30 +223,28 @@ mod test_iterator {
                     }
                 }
             }
-        })
-        ;
+        });
     }
 
     fn show_unknown_body_lines(input: &str) {
         let ptx: PtxFile = input.try_into().unwrap();
         ptx
         .into_iter()
-        .filter_map(|line| line.ok())
+            .filter_map(|line| line.ok())
         .filter_map(|(_, function)| {
             function.function()
         })
         .for_each(|function| {
             if let Some(body) = function.body {
                 body.filter_map(Result::ok)
-                .map(|(_, line)| line)
-                .for_each(|line| {
-                    if let BodyLine::Unknown(raw_string) = line {
-                        dbg!("Unknown line: {:?}", raw_string);
-                    }
-                })
+                    .map(|(_, line)| line)
+                    .for_each(|line| {
+                        if let BodyLine::Unknown(raw_string) = line {
+                            dbg!("Unknown line: {:?}", raw_string);
+                        }
+                    })
             }
-        })
-        ;
+        });
     }
 
     impl<'a> BodyLine<'a> {
@@ -252,7 +254,7 @@ mod test_iterator {
                 _ => None,
             }
         }
-    }    
+    }
 
     fn show_operations(input: &str) {
         let ptx: PtxFile = input.try_into().unwrap();
@@ -264,11 +266,15 @@ mod test_iterator {
         })
         .filter_map(|function| function.body)
         .for_each(|body| {
-            body.filter_map(Result::ok)
+            body
+            .filter_map(Result::ok)
             .map(|(_, line)| line)
             .filter_map(|line| line.operation())
             .for_each(|operation| {
-                let Operation { operation: _operation, arguments: _arguments} = operation;
+                let Operation {
+                    operation: _operation,
+                    arguments: _arguments,
+                } = operation;
                 dbg!("Operation: {_operation} with arguments: {_arguments}");
             })
         })
