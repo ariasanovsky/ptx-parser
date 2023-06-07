@@ -1,19 +1,16 @@
 use nom::{
-    IResult,
     branch::alt,
-    bytes::complete::{tag, take_while, take_until},
-    Parser,
-    sequence::{preceded, delimited},
+    bytes::complete::{tag, take_until, take_while},
     character::complete::{char, multispace1},
-    multi::many1_count
+    multi::many1_count,
+    sequence::{delimited, preceded},
+    IResult, Parser,
 };
 
 use super::Comment;
 
 pub(crate) fn many1_comments_or_whitespace(input: &str) -> IResult<&str, usize> {
-    many1_count(
-        comment_or_whitespace
-    )(input)
+    many1_count(comment_or_whitespace)(input)
 }
 
 pub(crate) fn comment_or_whitespace(input: &str) -> IResult<&str, &str> {
@@ -61,7 +58,10 @@ mod test_parse_line_comment {
     fn test_parse_line_comment_single_line_with_trailing_whitespace() {
         assert_eq!(
             parse_line_comment("// This is another comment with trailing whitespace    \n"),
-            Ok(("\n", Comment::Line(" This is another comment with trailing whitespace    ")))
+            Ok((
+                "\n",
+                Comment::Line(" This is another comment with trailing whitespace    ")
+            ))
         );
     }
 
@@ -69,7 +69,7 @@ mod test_parse_line_comment {
     fn test_parse_line_comment_single_line_empty() {
         assert_eq!(
             parse_line_comment("//\n"),
-            Ok(("\n", Comment::Line("" )))
+            Ok(("\n", Comment::Line("")))
         );
     }
 
@@ -85,7 +85,10 @@ mod test_parse_line_comment {
     fn test_parse_line_comment_multi_line() {
         assert_eq!(
             parse_line_comment("// This is a comment that extends over multiple lines\n// with another line\n"),
-            Ok(("\n// with another line\n", Comment::Line(" This is a comment that extends over multiple lines")))
+            Ok((
+                "\n// with another line\n",
+                Comment::Line(" This is a comment that extends over multiple lines")
+            ))
         );
     }
 
@@ -93,7 +96,10 @@ mod test_parse_line_comment {
     fn test_parse_line_comment_block_comment() {
         assert_eq!(
             parse_line_comment("/* This is a block comment\n and it's on \n 3 lines */\n"),
-            Ok(("\n", Comment::Block(" This is a block comment\n and it's on \n 3 lines ")))
+            Ok((
+                "\n",
+                Comment::Block(" This is a block comment\n and it's on \n 3 lines ")
+            ))
         );
     }
 }
@@ -109,7 +115,7 @@ mod test_empty_comments_and_whitespace {
             .is_err()
         );
     }
-    
+
     #[test]
     fn test_new_line() {
         assert_eq!(
