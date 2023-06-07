@@ -1,16 +1,23 @@
 use nom::{bytes::complete::take_while1, character::complete::char, sequence::delimited, IResult};
 
-pub(crate) mod body;
 pub(crate) mod comment;
 pub(crate) mod function;
 pub(crate) mod global;
 pub(crate) mod preamble;
 pub(crate) mod ptx_file;
 
-#[derive(Debug, PartialEq)]
-pub(crate) struct PtxFile<'a> {
+#[derive(Debug)]
+pub struct PtxParser<'a> {
     preamble: Preamble<'a>,
     body: Option<&'a str>,
+}
+
+#[cfg(feature = "std")]
+#[derive(Debug)]
+pub struct PtxFile<'a> {
+    preamble: Preamble<'a>,
+    functions: Vec<Function<'a>>,
+    globals: Vec<Global<'a>>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -20,20 +27,20 @@ pub(crate) enum Comment<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct Preamble<'a> {
+pub struct Preamble<'a> {
     version: preamble::Version<'a>,
     target: preamble::Target<'a>,
     address_size: preamble::AddressSize<'a>,
 }
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct Function<'a> {
+pub struct Function<'a> {
     signature: function::FunctionSignature<'a>,
-    body: Option<body::FunctionBody<'a>>,
+    body: Option<function::body::FunctionBody<'a>>,
 }
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct Global<'a> {
+pub struct Global<'a> {
     raw_string: &'a str,
 }
 

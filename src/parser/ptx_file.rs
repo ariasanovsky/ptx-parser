@@ -2,16 +2,16 @@ use nom::{branch::alt, combinator::opt, sequence::preceded, IResult, Parser};
 
 use super::{
     comment::many1_comments_or_whitespace, function::parse_function, global::parse_global,
-    preamble::parse_preamble, Function, Global, PtxFile,
+    preamble::parse_preamble, Function, Global, PtxParser,
 };
 
 #[derive(Debug)]
-pub(crate) enum FunctionOrGlobal<'a> {
+pub enum FunctionOrGlobal<'a> {
     Function(Function<'a>),
     Global(Global<'a>),
 }
 
-impl<'a> Iterator for PtxFile<'a> {
+impl<'a> Iterator for PtxParser<'a> {
     type Item = IResult<&'a str, FunctionOrGlobal<'a>>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -36,7 +36,7 @@ impl<'a> Iterator for PtxFile<'a> {
     }
 }
 
-impl<'a> TryFrom<&'a str> for PtxFile<'a> {
+impl<'a> TryFrom<&'a str> for PtxParser<'a> {
     type Error = nom::Err<nom::error::Error<&'a str>>;
 
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
@@ -44,14 +44,14 @@ impl<'a> TryFrom<&'a str> for PtxFile<'a> {
             opt(many1_comments_or_whitespace), 
             parse_preamble
         )(value)?;
-        Ok(PtxFile { preamble, body: Some(body) })
+        Ok(PtxParser { preamble, body: Some(body) })
     }
 }
 
 #[cfg(feature = "std")]
 #[cfg(test)]
 mod test_iterator {
-    use super::{FunctionOrGlobal, PtxFile};
+    use super::{FunctionOrGlobal, PtxParser};
     use crate::parser::Function;
     use crate::ptx_files::{kernel, _EXAMPLE_FILE};
 
@@ -66,7 +66,7 @@ mod test_iterator {
 
     #[test]
     fn parse_example() {
-        let ptx: PtxFile = _EXAMPLE_FILE.try_into().unwrap();
+        let ptx: PtxParser = _EXAMPLE_FILE.try_into().unwrap();
         dbg!("Preamble: {:?}", &ptx.preamble);
         for _function_or_global in ptx {
             dbg!("{_function_or_global:?}\n");
@@ -75,7 +75,7 @@ mod test_iterator {
 
     #[test]
     fn parse_kernel() {
-        let ptx: PtxFile = kernel::_PTX.try_into().unwrap();
+        let ptx: PtxParser = kernel::_PTX.try_into().unwrap();
         dbg!("Preamble: {:?}", &ptx.preamble);
         for _function_or_global in ptx {
             dbg!("{_function_or_global:?}\n");

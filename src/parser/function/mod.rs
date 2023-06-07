@@ -11,7 +11,11 @@ use nom::{
 
 use crate::parser::comment::many1_comments_or_whitespace;
 
-use super::{parse_name, parse_parenthesized_naive, Function, parse_braced_balanced, body::FunctionBody};
+use super::{parse_name, parse_parenthesized_naive, Function, parse_braced_balanced};
+
+pub(crate) mod body;
+
+use body::FunctionBody;
 
 #[derive(Debug, PartialEq)]
 pub(super) struct FunctionSignature<'a> {

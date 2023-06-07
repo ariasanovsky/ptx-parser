@@ -7,12 +7,15 @@ use nom::{
     IResult, Parser,
 };
 
-use crate::parser::comment::many1_comments_or_whitespace;
-
-use super::{comment::parse_line_comment, is_special, parse_braced_balanced, Comment};
+use crate::parser::{
+    comment::{many1_comments_or_whitespace, parse_line_comment},
+    is_special,
+    Comment,
+    parse_braced_balanced
+};
 
 #[derive(Debug, PartialEq)]
-pub(super) struct FunctionBody<'a> {
+pub(crate) struct FunctionBody<'a> {
     pub(crate) body: Option<&'a str>,
 }
 
@@ -200,14 +203,14 @@ pub(crate) enum Predicate<'a> {
 #[cfg(test)]
 mod test_iterator {
     use crate::{
-        parser::PtxFile,
+        parser::PtxParser,
         ptx_files::{a, kernel, _EXAMPLE_FILE},
     };
 
     use super::{BodyLine, Operation};
 
     fn show_body_lines(input: &str) {
-        let ptx: PtxFile = input.try_into().unwrap();
+        let ptx: PtxParser = input.try_into().unwrap();
         ptx
         .into_iter()
             .filter_map(|line| line.ok())
@@ -227,7 +230,7 @@ mod test_iterator {
     }
 
     fn show_unknown_body_lines(input: &str) {
-        let ptx: PtxFile = input.try_into().unwrap();
+        let ptx: PtxParser = input.try_into().unwrap();
         ptx
         .into_iter()
             .filter_map(|line| line.ok())
@@ -257,7 +260,7 @@ mod test_iterator {
     }
 
     fn show_operations(input: &str) {
-        let ptx: PtxFile = input.try_into().unwrap();
+        let ptx: PtxParser = input.try_into().unwrap();
         ptx
         .into_iter()
         .filter_map(|line| line.ok())
