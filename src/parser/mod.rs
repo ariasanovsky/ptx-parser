@@ -16,6 +16,12 @@ pub struct PtxParser<'a> {
     body: Option<&'a str>,
 }
 
+impl<'a> PtxParser<'a> {
+    pub fn preamble(&self) -> &Preamble<'a> {
+        &self.preamble
+    }
+}
+
 #[cfg(feature = "std")]
 #[derive(Debug)]
 pub struct PtxFile<'a> {

@@ -31,8 +31,14 @@ impl<'a> Iterator for FunctionBody<'a> {
                     Ok((body, value))
             },
                 err => {
-                    self.body = None;
-                    err
+                    let body = self.body?.trim();
+                    if body.is_empty() {
+                        self.body = None;
+                        return None
+                    } else {
+                        self.body = Some(body);
+                        err
+                    }
             },
         })
     }
@@ -220,11 +226,11 @@ mod test_iterator {
             }
         })
         .for_each(|function| {
-            dbg!("Function: {function:?}");
+            dbg!(&function);
             if let Some(body) = function.body {
                 for line in body {
                     if let Ok(line) = line {
-                        dbg!("Body line: {:?}", line.1);
+                        dbg!(line.1);
                     }
                 }
             }
@@ -249,7 +255,7 @@ mod test_iterator {
                     .map(|(_, line)| line)
                     .for_each(|line| {
                         if let BodyLine::Unknown(raw_string) = line {
-                            dbg!("Unknown line: {:?}", raw_string);
+                            dbg!("Unknown line", raw_string);
                         }
                     })
             }
@@ -284,11 +290,7 @@ mod test_iterator {
             .map(|(_, line)| line)
             .filter_map(|line| line.operation())
             .for_each(|operation| {
-                let Operation {
-                    operation: _operation,
-                    arguments: _arguments,
-                } = operation;
-                dbg!("Operation: {_operation} with arguments: {_arguments}");
+                dbg!(operation);
             })
         })
     }

@@ -1,6 +1,13 @@
 use nom::{branch::alt, combinator::opt, sequence::preceded, IResult, Parser};
 
-use super::{function::{Function, parse::parse_function}, global::{Global, parse::parse_global}, PtxParser, comment::parse::many1_comments_or_whitespace, preamble::parse::parse_preamble};
+use super::{
+    function::{Function, parse::parse_function},
+    global::{Global, parse::parse_global},
+    PtxParser,
+    comment::parse::many1_comments_or_whitespace,
+};
+
+mod try_from;
 
 #[derive(Debug)]
 pub enum FunctionOrGlobal<'a> {
@@ -26,22 +33,16 @@ impl<'a> Iterator for PtxParser<'a> {
                 Ok((body, value))
             }
             err => {
-                self.body = None;
-                err
+                let body = self.body?.trim();
+                if body.is_empty() {
+                    self.body = None;
+                    return None
+                } else {
+                    self.body = Some(body);
+                    err
+                }
             }
         })
-    }
-}
-
-impl<'a> TryFrom<&'a str> for PtxParser<'a> {
-    type Error = nom::Err<nom::error::Error<&'a str>>;
-
-    fn try_from(value: &'a str) -> Result<Self, Self::Error> {
-        let (body, preamble) = preceded(
-            opt(many1_comments_or_whitespace), 
-            parse_preamble
-        )(value)?;
-        Ok(PtxParser { preamble, body: Some(body) })
     }
 }
 
@@ -54,9 +55,9 @@ mod test_iterator {
     #[test]
     fn parse_example() {
         let ptx: PtxParser = _EXAMPLE_FILE.try_into().unwrap();
-        dbg!("Preamble: {:?}", &ptx.preamble);
-        for _function_or_global in ptx {
-            dbg!("{_function_or_global:?}\n");
+        dbg!(&ptx.preamble);
+        for function_or_global in ptx {
+            let _ = dbg!(function_or_global);
         }
     }
 
@@ -64,8 +65,8 @@ mod test_iterator {
     fn parse_kernel() {
         let ptx: PtxParser = kernel::_PTX.try_into().unwrap();
         dbg!("Preamble: {:?}", &ptx.preamble);
-        for _function_or_global in ptx {
-            dbg!("{_function_or_global:?}\n");
+        for function_or_global in ptx {
+            let _ = dbg!(function_or_global);
         }
     }
 }
